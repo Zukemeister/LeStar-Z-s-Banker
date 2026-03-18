@@ -1,0 +1,1708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Banker">
+<meta name="theme-color" content="#1a361a">
+<title>LeStar Z's Banker</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,400;0,700;0,900;1,900&family=Playfair+Display:ital,wght@1,700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+button{-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;}
+svg,.diagram-wrap,.card{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;}
+html,body{background:#141414;font-family:'Lato',sans-serif;display:flex;flex-direction:column;align-items:center;padding:12px 8px 32px;min-height:100vh;}
+.card{background:#1a361a;border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,0.7);width:100%;max-width:700px;padding:14px 12px 16px;border:2px solid #2a4e2a;}
+
+/* ── HEADER ── */
+.hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.07);}
+h1{display:flex;align-items:center;justify-content:center;line-height:1;margin-bottom:2px;}
+.t-lestar{font-family:'Playfair Display',serif;font-style:italic;font-weight:700;font-size:clamp(11px,3vw,16px);color:#f0df70;}
+.t-z{font-family:'Lato',sans-serif;font-style:italic;font-weight:900;font-size:clamp(20px,5.5vw,30px);color:#f0df70;line-height:1;display:inline-flex;align-items:center;margin:0 1px 0 2px;}
+.t-rest{font-family:'Playfair Display',serif;font-style:italic;font-weight:700;font-size:clamp(11px,3vw,16px);color:#f0df70;}
+.sub{font-size:9px;color:rgba(255,255,255,0.35);letter-spacing:0.07em;}
+#help-btn{flex-shrink:0;width:28px;height:28px;border-radius:50%;border:2px solid rgba(255,255,255,0.35);background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.7);font-family:'Lato',sans-serif;font-size:14px;font-weight:900;cursor:pointer;line-height:1;}
+
+/* ── DIAGRAM WRAP ── */
+.diagram-wrap{border:2px solid #000;border-radius:4px;overflow:hidden;margin-bottom:10px;}
+.svg-box{position:relative;width:100%;overflow:hidden;background:rgba(0,0,0,0.22);}
+.svg-box.top-box{padding-bottom:calc(260/460*100%);}
+.svg-box.aim-box{padding-bottom:calc(220/460*100%);}
+.svg-box svg{position:absolute;top:0;left:0;width:100%;height:100%;}
+.sep{height:2px;background:#000;}
+
+/* Rotate button on table */
+/* rot-btn now uses .tog class */
+
+/* ── RAIL TABS ── */
+#rail-tabs{display:flex;gap:5px;padding:4px 0 8px;flex-wrap:wrap;}
+.rail-tab{padding:4px 12px;border-radius:4px;font-size:0.68rem;font-weight:900;letter-spacing:1px;text-transform:uppercase;border:1px solid;cursor:pointer;opacity:.38;transition:opacity .15s;font-family:'Lato',sans-serif;-webkit-tap-highlight-color:transparent;}
+.rail-tab.active{opacity:1;}
+#no-solution{display:none;font-size:0.72rem;color:rgba(255,255,255,0.35);padding:4px 0 8px;letter-spacing:1px;}
+
+/* ── SLIDERS ── */
+.sgroup{background:rgba(0,0,0,0.18);border-radius:7px;padding:7px 10px 6px;margin-bottom:6px;border:1px solid rgba(255,255,255,0.07);}
+.sgroup-title{font-size:9px;font-weight:700;letter-spacing:0.13em;text-transform:uppercase;color:#ddd;margin-bottom:6px;}
+.srow{display:flex;align-items:center;gap:8px;margin-bottom:2px;}
+.srow:last-child{margin-bottom:0;}
+.slbl{font-size:11px;color:#e8e8e8;min-width:52px;font-weight:700;}
+.sval{font-size:15px;font-weight:900;min-width:70px;text-align:right;white-space:nowrap;color:#f0df70;}
+input[type=range]{flex:1;-webkit-appearance:none;height:5px;background:rgba(255,255,255,0.15);border-radius:3px;outline:none;touch-action:none;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;cursor:pointer;border:2px solid #1a361a;box-shadow:0 1px 5px rgba(0,0,0,0.5);}
+#sl-spd::-webkit-slider-thumb{background:#f0df70;}
+#sl-spn::-webkit-slider-thumb{background:#e870b0;}
+#sl-vert::-webkit-slider-thumb{background:#7dd3fc;}
+#sl-bias::-webkit-slider-thumb{background:#c890f0;}
+
+/* ── READOUTS ── */
+#readouts{margin-top:2px;}
+.ro-row{display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06);}
+.ro-row:last-child{border-bottom:none;}
+.ro-lbl{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,0.4);}
+.ro-val{font-size:17px;font-weight:900;font-family:'Lato',sans-serif;color:#f0df70;text-align:right;}
+.ro-sub{font-size:11px;font-weight:700;color:#a0d0a0;}
+
+/* ── INFO OVERLAY ── */
+#info-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:100;flex-direction:column;align-items:center;justify-content:flex-start;padding:32px 20px 20px;overflow-y:auto;}
+#info-overlay.open{display:flex;}
+#info-inner{background:#1a361a;border:2px solid #2a4e2a;border-radius:10px;width:100%;max-width:560px;padding:20px 18px 24px;position:relative;}
+#info-close{position:absolute;top:10px;right:12px;background:none;border:none;color:rgba(255,255,255,0.5);font-size:22px;cursor:pointer;line-height:1;font-family:'Lato',sans-serif;}
+#info-inner h2{font-family:'Playfair Display',serif;font-style:italic;color:#f0df70;font-size:1.2rem;margin-bottom:12px;}
+#info-inner p{font-size:0.78rem;color:rgba(255,255,255,0.88);line-height:1.7;margin-bottom:10px;}
+#info-inner p.intro{font-size:0.82rem;color:#fff;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.12);}
+#info-inner ol{font-size:0.82rem;color:rgba(255,255,255,0.88);line-height:1.8;padding-left:1.4em;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.12);}
+#info-inner p:last-child{margin-bottom:0;}
+#info-inner strong{color:#f0df70;}
+
+/* ── TOGGLE BUTTONS ── */
+.tog{flex:1;height:24px;border-radius:6px;border:none;font-family:'Lato',sans-serif;font-size:8px;font-weight:900;letter-spacing:1px;cursor:pointer;text-transform:uppercase;display:flex;align-items:center;justify-content:center;transition:filter .15s;}
+.tog.dim{filter:brightness(0.42) saturate(0.5);}
+#cal-btn.active{background:rgba(240,223,112,0.22);border-color:#f0df70;}
+/* ── BOUNCE RAIL PILLS ── */
+#bounce-pills{display:flex;gap:4px;padding:4px 0 2px;}
+.bpill{height:22px;padding:0 10px;border-radius:6px;border:none;font-family:'Lato',sans-serif;font-size:8px;font-weight:900;letter-spacing:1px;cursor:pointer;text-transform:uppercase;display:inline-flex;align-items:center;background:rgba(240,223,112,0.18);color:rgba(240,223,112,0.6);outline:none;-webkit-tap-highlight-color:transparent;}
+.bpill.active{background:#f0df70;color:#1a1a1a;}
+#cal-panel{display:none;position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:700px;background:#1a361a;border:2px solid #4ade80;border-bottom:none;border-radius:10px 10px 0 0;padding:14px 14px 24px;z-index:50;box-shadow:0 -4px 24px rgba(0,0,0,0.7);}
+#cal-panel.open{display:block;}
+#cal-instruction{font-size:12px;color:#ffffff;font-weight:700;margin-bottom:8px;line-height:1.55;}
+#cal-status{font-size:10px;color:rgba(255,255,255,0.55);letter-spacing:0.05em;margin-bottom:8px;text-transform:uppercase;}
+.cal-shots{display:flex;gap:8px;margin-bottom:10px;}
+.cal-shot-dot{width:14px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,0.3);background:rgba(255,255,255,0.08);}
+.cal-shot-dot.done{background:#4ade80;border-color:#4ade80;}
+.cal-actions{display:flex;gap:6px;margin-bottom:6px;}
+.cal-action-btn{flex:1;padding:8px 4px;border-radius:5px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.06);color:#fff;font-family:'Lato',sans-serif;font-size:10px;font-weight:900;letter-spacing:0.08em;cursor:pointer;text-transform:uppercase;}
+.cal-action-btn.primary{background:rgba(74,222,128,0.15);border-color:#4ade80;color:#4ade80;}
+.cal-action-btn.danger{background:rgba(255,80,80,0.1);border-color:rgba(255,80,80,0.4);color:#ff8080;}
+#cal-result{font-size:11px;color:#88ee88;margin-top:6px;display:none;line-height:1.65;}
+
+footer{text-align:center;font-size:0.58rem;color:rgba(255,255,255,0.15);padding:10px 8px 4px;letter-spacing:1.5px;text-transform:uppercase;margin-top:12px;}
+</style>
+</head>
+<body>
+<!-- Persistent gradients for aiming diagram (Aimer protocol) -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <radialGradient id="CGB" cx="36%" cy="28%">
+      <stop offset="0%" stop-color="#ffffff"/><stop offset="48%" stop-color="#d8d2c4"/><stop offset="100%" stop-color="#908070"/>
+    </radialGradient>
+    <radialGradient id="OGdB" cx="50%" cy="28%">
+      <stop offset="0%" stop-color="#ff6060"/>
+      <stop offset="40%" stop-color="#cc1010"/>
+      <stop offset="100%" stop-color="#6a0808"/>
+    </radialGradient>
+    <radialGradient id="OGB" cx="50%" cy="28%">
+      <stop offset="0%" stop-color="#ff9090"/>
+      <stop offset="35%" stop-color="#ee2020"/>
+      <stop offset="80%" stop-color="#aa0808"/>
+      <stop offset="100%" stop-color="#6a0808"/>
+    </radialGradient>
+    <marker id="Tarr" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+      <polygon points="0,0 9,3.5 0,7" fill="rgba(255,255,255,0.92)"/>
+    </marker>
+  </defs>
+</svg>
+<div class="card">
+
+<!-- ── HEADER ── -->
+<div class="hdr">
+  <button id="help-btn" onclick="toggleInfo()">?</button>
+  <div style="text-align:center;flex:1;padding:0 8px;">
+    <h1><span class="t-lestar">LeStar&nbsp;</span><span class="t-z">Z</span><span class="t-rest">'s Banker</span></h1>
+    <p class="sub">place the balls · pick a pocket · find the bank</p>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:3px;align-items:flex-end;flex-shrink:0;">
+    <button id="table-btn" onclick="toggleTable()" style="padding:4px 10px;border-radius:14px;border:2px solid rgba(160,208,160,0.4);background:rgba(160,208,160,0.08);color:#a0d0a0;font-family:'Lato',sans-serif;font-size:11px;font-weight:900;letter-spacing:0.06em;cursor:pointer;white-space:nowrap;">POOL</button>
+    <div style="display:flex;gap:3px;">
+      <button id="size-btn" onclick="cycleTableSize()" style="padding:3px 8px;border-radius:10px;border:1px solid rgba(240,223,112,0.4);background:rgba(240,223,112,0.08);color:#f0df70;font-family:'Lato',sans-serif;font-size:10px;font-weight:900;cursor:pointer;">9ft</button>
+      <button id="unit-btn" onclick="toggleUnits()" style="padding:3px 8px;border-radius:10px;border:1px solid rgba(240,223,112,0.4);background:rgba(240,223,112,0.08);color:#f0df70;font-family:'Lato',sans-serif;font-size:10px;font-weight:900;cursor:pointer;">FT</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── TABLE + AIMING DIAGRAM ── -->
+<div class="diagram-wrap">
+
+  <!-- BIRD'S EYE TABLE -->
+  <div class="svg-box top-box" style="position:relative;">
+    <svg id="tbl" viewBox="0 0 460 260" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="gFelt" cx="50%" cy="50%" r="60%">
+        <stop offset="0%" stop-color="#1e6b35"/><stop offset="100%" stop-color="#134d25"/>
+      </radialGradient>
+      <radialGradient id="gPocket" cx="35%" cy="35%" r="70%">
+        <stop offset="0%" stop-color="#1a1a1a"/><stop offset="100%" stop-color="#050a05"/>
+      </radialGradient>
+      <radialGradient id="gBall" cx="35%" cy="30%" r="65%">
+        <stop offset="0%" stop-color="#fff"/><stop offset="60%" stop-color="#f0f0e8"/><stop offset="100%" stop-color="#d8d8d0"/>
+      </radialGradient>
+      <radialGradient id="gOB" cx="34%" cy="26%" r="70%">
+        <stop offset="0%" stop-color="#ff9060"/><stop offset="40%" stop-color="#e04010"/><stop offset="100%" stop-color="#601808"/>
+      </radialGradient>
+      <marker id="arr-ob" markerWidth="7" markerHeight="5" refX="4" refY="2.5" orient="auto" markerUnits="strokeWidth"><polygon points="0 0,7 2.5,0 5" fill="#7dd3fc"/></marker>
+      <marker id="arr-bk" markerWidth="7" markerHeight="5" refX="4" refY="2.5" orient="auto" markerUnits="strokeWidth"><polygon points="0 0,7 2.5,0 5" fill="#4ade80"/></marker>
+      <marker id="arr-ai" markerWidth="7" markerHeight="5" refX="4" refY="2.5" orient="auto" markerUnits="strokeWidth"><polygon points="0 0,7 2.5,0 5" fill="#f0df70" opacity=".7"/></marker>
+    </defs>
+
+    <g id="tbl-content">
+    <!-- Wood rail -->
+    <rect x="0" y="0" width="460" height="260" rx="9" fill="#3d2b1f"/>
+    <rect x="1.5" y="1.5" width="457" height="257" rx="8" fill="none" stroke="#5a3f2c" stroke-width="2"/>
+    <!-- Cushion strips (rubber, between rail and felt) -->
+    <rect x="30" y="17" width="400" height="13" fill="#1a6830"/>
+    <rect x="30" y="230" width="400" height="13" fill="#1a6830"/>
+    <rect x="17" y="30" width="13" height="200" fill="#1a6830"/>
+    <rect x="430" y="30" width="13" height="200" fill="#1a6830"/>
+    <!-- Felt -->
+    <rect x="30" y="30" width="400" height="200" fill="url(#gFelt)"/>
+    <rect x="30" y="30" width="400" height="200" fill="none" stroke="#0f3d1c" stroke-width="1"/>
+    <!-- Pockets — drawn after felt so dark circles cover junction correctly -->
+    <circle cx="30"  cy="30"  r="17" fill="#060a06"/>
+    <circle cx="430" cy="30"  r="17" fill="#060a06"/>
+    <circle cx="30"  cy="230" r="17" fill="#060a06"/>
+    <circle cx="430" cy="230" r="17" fill="#060a06"/>
+    <!-- Side pockets — tapered jaws, rounded back, clean felt edge -->
+    <path d="M 210,30 L 215,16 A 15,9 0 0 1 245,16 L 250,30 Z" fill="#060a06"/>
+    <path d="M 210,230 L 215,244 A 15,9 0 0 0 245,244 L 250,230 Z" fill="#060a06"/>
+    <!-- Diamonds -->
+    <polygon points="80,10 84,15 80,20 76,15" fill="#c8a84b"/><polygon points="130,10 134,15 130,20 126,15" fill="#c8a84b"/>
+    <polygon points="180,10 184,15 180,20 176,15" fill="#c8a84b"/><polygon points="280,10 284,15 280,20 276,15" fill="#c8a84b"/>
+    <polygon points="330,10 334,15 330,20 326,15" fill="#c8a84b"/><polygon points="380,10 384,15 380,20 376,15" fill="#c8a84b"/>
+    <polygon points="80,240 84,245 80,250 76,245" fill="#c8a84b"/><polygon points="130,240 134,245 130,250 126,245" fill="#c8a84b"/>
+    <polygon points="180,240 184,245 180,250 176,245" fill="#c8a84b"/><polygon points="280,240 284,245 280,250 276,245" fill="#c8a84b"/>
+    <polygon points="330,240 334,245 330,250 326,245" fill="#c8a84b"/><polygon points="380,240 384,245 380,250 376,245" fill="#c8a84b"/>
+    <polygon points="10,80 15,76 20,80 15,84" fill="#c8a84b"/><polygon points="10,130 15,126 20,130 15,134" fill="#c8a84b"/>
+    <polygon points="10,180 15,176 20,180 15,184" fill="#c8a84b"/><polygon points="440,80 445,76 450,80 445,84" fill="#c8a84b"/>
+    <polygon points="440,130 445,126 450,130 445,134" fill="#c8a84b"/><polygon points="440,180 445,176 450,180 445,184" fill="#c8a84b"/>
+    <!-- Diamond numbers -->
+    <text x="80"  y="7"   text-anchor="middle" fill="#907020" font-size="7" font-family="Helvetica">1</text>
+    <text x="130" y="7"   text-anchor="middle" fill="#907020" font-size="7" font-family="Helvetica">2</text>
+    <text x="180" y="7"   text-anchor="middle" fill="#907020" font-size="7" font-family="Helvetica">3</text>
+    <text x="280" y="7"   text-anchor="middle" fill="#907020" font-size="7" font-family="Helvetica">5</text>
+    <text x="330" y="7"   text-anchor="middle" fill="#907020" font-size="7" font-family="Helvetica">6</text>
+    <text x="380" y="7"   text-anchor="middle" fill="#907020" font-size="7" font-family="Helvetica">7</text>
+    <text x="80"  y="259" text-anchor="middle" fill="#907020" font-size="7" font-family="Helvetica">1</text>
+    <text x="130" y="259" text-anchor="middle" fill="#907020" font-size="7" font-family="Helvetica">2</text>
+    <text x="180" y="259" text-anchor="middle" fill="#907020" font-size="7" font-family="Helvetica">3</text>
+    <text x="280" y="259" text-anchor="middle" fill="#907020" font-size="7" font-family="Helvetica">5</text>
+    <text x="330" y="259" text-anchor="middle" fill="#907020" font-size="7" font-family="Helvetica">6</text>
+    <text x="380" y="259" text-anchor="middle" fill="#907020" font-size="7" font-family="Helvetica">7</text>
+    <text x="3"   y="83"  fill="#907020" font-size="7" font-family="Helvetica">1</text>
+    <text x="3"   y="133" fill="#907020" font-size="7" font-family="Helvetica">2</text>
+    <text x="3"   y="183" fill="#907020" font-size="7" font-family="Helvetica">3</text>
+    <text x="452" y="83"  fill="#907020" font-size="7" font-family="Helvetica">1</text>
+    <text x="452" y="133" fill="#907020" font-size="7" font-family="Helvetica">2</text>
+    <text x="452" y="183" fill="#907020" font-size="7" font-family="Helvetica">3</text>
+    <text x="30"  y="26"  text-anchor="middle" fill="#604a14" font-size="6.5" font-family="Helvetica">0</text>
+    <text x="430" y="26"  text-anchor="middle" fill="#604a14" font-size="6.5" font-family="Helvetica">8</text>
+    <text x="230" y="26"  text-anchor="middle" fill="#604a14" font-size="6.5" font-family="Helvetica">4</text>
+    <text x="6"   y="32"  fill="#604a14" font-size="6.5" font-family="Helvetica">0</text>
+    <text x="6"   y="232" fill="#604a14" font-size="6.5" font-family="Helvetica">4</text>
+
+    <!-- ── MAP OVERLAY ── -->
+    <g id="map-layer" opacity="0" style="pointer-events:none">
+      <!-- Rail labels -->
+      <text x="230" y="43" text-anchor="middle" font-family="Lato,sans-serif" font-size="7" font-weight="700" fill="#7dd3fc" letter-spacing="2">TOP</text>
+      <text x="230" y="224" text-anchor="middle" font-family="Lato,sans-serif" font-size="7" font-weight="700" fill="#7dd3fc" letter-spacing="2">BTM</text>
+      <text x="40" y="132" text-anchor="middle" font-family="Lato,sans-serif" font-size="7" font-weight="700" fill="#7dd3fc" letter-spacing="2" transform="rotate(-90,40,132)">LFT</text>
+      <text x="420" y="132" text-anchor="middle" font-family="Lato,sans-serif" font-size="7" font-weight="700" fill="#7dd3fc" letter-spacing="2" transform="rotate(90,420,132)">RGT</text>
+
+      <!-- Diamond grid lines — horizontal (across top/bottom rails) -->
+      <line x1="80"  y1="30" x2="80"  y2="230" stroke="#7dd3fc" stroke-width="0.8" opacity="0.55"/>
+      <line x1="130" y1="30" x2="130" y2="230" stroke="#7dd3fc" stroke-width="0.8" opacity="0.55"/>
+      <line x1="180" y1="30" x2="180" y2="230" stroke="#7dd3fc" stroke-width="0.8" opacity="0.55"/>
+      <line x1="230" y1="30" x2="230" y2="230" stroke="#7dd3fc" stroke-width="1.2" opacity="0.75"/>
+      <line x1="280" y1="30" x2="280" y2="230" stroke="#7dd3fc" stroke-width="0.8" opacity="0.55"/>
+      <line x1="330" y1="30" x2="330" y2="230" stroke="#7dd3fc" stroke-width="0.8" opacity="0.55"/>
+      <line x1="380" y1="30" x2="380" y2="230" stroke="#7dd3fc" stroke-width="0.8" opacity="0.55"/>
+
+      <!-- Diamond grid lines — vertical (across left/right rails) -->
+      <line x1="30" y1="80"  x2="430" y2="80"  stroke="#7dd3fc" stroke-width="0.8" opacity="0.55"/>
+      <line x1="30" y1="130" x2="430" y2="130" stroke="#7dd3fc" stroke-width="1.2" opacity="0.75"/>
+      <line x1="30" y1="180" x2="430" y2="180" stroke="#7dd3fc" stroke-width="0.8" opacity="0.55"/>
+
+      <!-- Pocket-to-diamond lines (corner pockets to 1st diamond each side) -->
+      <line x1="30"  y1="30"  x2="80"  y2="30"  stroke="#7dd3fc" stroke-width="0.5" opacity="0.4"/>
+      <line x1="30"  y1="30"  x2="30"  y2="80"  stroke="#7dd3fc" stroke-width="0.5" opacity="0.4"/>
+      <line x1="430" y1="30"  x2="380" y2="30"  stroke="#7dd3fc" stroke-width="0.5" opacity="0.4"/>
+      <line x1="430" y1="30"  x2="430" y2="80"  stroke="#7dd3fc" stroke-width="0.5" opacity="0.4"/>
+      <line x1="30"  y1="230" x2="80"  y2="230" stroke="#7dd3fc" stroke-width="0.5" opacity="0.4"/>
+      <line x1="30"  y1="230" x2="30"  y2="180" stroke="#7dd3fc" stroke-width="0.5" opacity="0.4"/>
+      <line x1="430" y1="230" x2="380" y2="230" stroke="#7dd3fc" stroke-width="0.5" opacity="0.4"/>
+      <line x1="430" y1="230" x2="430" y2="180" stroke="#7dd3fc" stroke-width="0.5" opacity="0.4"/>
+
+      <!-- Diamond number labels — top rail -->
+      <text x="80"  y="27" text-anchor="middle" font-family="Lato,sans-serif" font-size="6" fill="#7dd3fc" opacity="0.8">1</text>
+      <text x="130" y="27" text-anchor="middle" font-family="Lato,sans-serif" font-size="6" fill="#7dd3fc" opacity="0.8">2</text>
+      <text x="180" y="27" text-anchor="middle" font-family="Lato,sans-serif" font-size="6" fill="#7dd3fc" opacity="0.8">3</text>
+      <text x="280" y="27" text-anchor="middle" font-family="Lato,sans-serif" font-size="6" fill="#7dd3fc" opacity="0.8">5</text>
+      <text x="330" y="27" text-anchor="middle" font-family="Lato,sans-serif" font-size="6" fill="#7dd3fc" opacity="0.8">6</text>
+      <text x="380" y="27" text-anchor="middle" font-family="Lato,sans-serif" font-size="6" fill="#7dd3fc" opacity="0.8">7</text>
+
+      <!-- Diamond number labels — bottom rail -->
+      <text x="80"  y="238" text-anchor="middle" font-family="Lato,sans-serif" font-size="6" fill="#7dd3fc" opacity="0.8">1</text>
+      <text x="130" y="238" text-anchor="middle" font-family="Lato,sans-serif" font-size="6" fill="#7dd3fc" opacity="0.8">2</text>
+      <text x="180" y="238" text-anchor="middle" font-family="Lato,sans-serif" font-size="6" fill="#7dd3fc" opacity="0.8">3</text>
+      <text x="280" y="238" text-anchor="middle" font-family="Lato,sans-serif" font-size="6" fill="#7dd3fc" opacity="0.8">5</text>
+      <text x="330" y="238" text-anchor="middle" font-family="Lato,sans-serif" font-size="6" fill="#7dd3fc" opacity="0.8">6</text>
+      <text x="380" y="238" text-anchor="middle" font-family="Lato,sans-serif" font-size="6" fill="#7dd3fc" opacity="0.8">7</text>
+
+      <!-- Diamond number labels — left rail -->
+      <text x="22" y="83"  text-anchor="middle" font-family="Lato,sans-serif" font-size="6" fill="#7dd3fc" opacity="0.8">1</text>
+      <text x="22" y="133" text-anchor="middle" font-family="Lato,sans-serif" font-size="6" fill="#7dd3fc" opacity="0.8">2</text>
+      <text x="22" y="183" text-anchor="middle" font-family="Lato,sans-serif" font-size="6" fill="#7dd3fc" opacity="0.8">3</text>
+
+      <!-- Diamond number labels — right rail -->
+      <text x="438" y="83"  text-anchor="middle" font-family="Lato,sans-serif" font-size="6" fill="#7dd3fc" opacity="0.8">1</text>
+      <text x="438" y="133" text-anchor="middle" font-family="Lato,sans-serif" font-size="6" fill="#7dd3fc" opacity="0.8">2</text>
+      <text x="438" y="183" text-anchor="middle" font-family="Lato,sans-serif" font-size="6" fill="#7dd3fc" opacity="0.8">3</text>
+
+      <!-- Center spot -->
+      <circle cx="230" cy="130" r="3" fill="none" stroke="#7dd3fc" stroke-width="1" opacity="0.6"/>
+      <circle cx="230" cy="130" r="0.8" fill="#7dd3fc" opacity="0.6"/>
+      <text x="236" y="128" font-family="Lato,sans-serif" font-size="6" fill="#7dd3fc" opacity="0.6">CENTER</text>
+    </g>
+
+    <!-- ── DYNAMIC LAYER ── -->
+    <g id="dyn">
+      <!-- Pocket snap highlights (shown briefly on tap) -->
+      <circle id="phl-TL" cx="30"  cy="30"  r="16" fill="none" stroke="#f0df70" stroke-width="2"   opacity="0"/>
+      <circle id="phl-TM" cx="230" cy="30"  r="14" fill="none" stroke="#f0df70" stroke-width="2"   opacity="0"/>
+      <circle id="phl-TR" cx="430" cy="30"  r="16" fill="none" stroke="#f0df70" stroke-width="2"   opacity="0"/>
+      <circle id="phl-BL" cx="30"  cy="230" r="16" fill="none" stroke="#f0df70" stroke-width="2"   opacity="0"/>
+      <circle id="phl-BM" cx="230" cy="230" r="14" fill="none" stroke="#f0df70" stroke-width="2"   opacity="0"/>
+      <circle id="phl-BR" cx="430" cy="230" r="16" fill="none" stroke="#f0df70" stroke-width="2"   opacity="0"/>
+
+      <!-- Free draggable target -->
+      <!-- Ghost ball -->
+
+      <!-- Free draggable target — solid dot only -->
+      <!-- Second object ball — draggable reference, not wired to physics -->
+      <circle id="ob2-shadow" cx="401" cy="211" r="10" fill="#000" opacity="0.32"/>
+      <circle id="ob2"        cx="400" cy="210" r="10" fill="url(#gOB)" stroke="#903010" stroke-width="1" opacity="0.55"/>
+      <circle id="ob2-hi"     cx="396" cy="206" r="3.5" fill="#fff" opacity="0.35"/>
+
+      <!-- Shot lines -->
+      <line id="ob-path"  x1="0" y1="0" x2="0" y2="0" stroke="#7dd3fc" stroke-width="1.8" marker-end="url(#arr-ob)" opacity="0"/>
+      <line id="bk-path"  x1="0" y1="0" x2="0" y2="0" stroke="#4ade80" stroke-width="1.4" stroke-dasharray="6,4" marker-end="url(#arr-bk)" opacity="0"/>
+      <!-- 2nd cushion path (violet) -->
+      <line id="bk-path2" x1="0" y1="0" x2="0" y2="0" stroke="#a78bfa" stroke-width="1.2" stroke-dasharray="6,4" opacity="0"/>
+      <!-- Rail contact dots — contact-dot is draggable -->
+      <circle id="contact-dot"  cx="0" cy="0" r="9" fill="rgba(255,255,255,0.15)" stroke="#ffffff" stroke-width="2" opacity="0"/>
+      <circle id="contact-dot2" cx="0" cy="0" r="5" fill="none" stroke="#a78bfa" stroke-width="1.6" opacity="0"/>
+      <!-- Invisible hit zone for contact dot — always receives pointer events -->
+
+      <!-- Ghost ball (toggleable) -->
+      <circle id="ghost-ball" cx="0" cy="0" r="10" fill="rgba(255,255,255,.06)" stroke="#ffffff" stroke-width="1.5" stroke-dasharray="3,3" opacity="0"/>
+
+      <!-- Object ball -->
+      <circle id="ob-shadow" cx="281" cy="131" r="10" fill="#000" opacity="0.32"/>
+      <circle id="ob"        cx="280" cy="130" r="10" fill="url(#gOB)" stroke="#903010" stroke-width="1"/>
+      <circle id="ob-hi"     cx="276" cy="126" r="3.5" fill="#fff" opacity="0.45"/>
+
+      <!-- Cue ball -->
+      <circle id="cb-shadow" cx="151" cy="131" r="10" fill="#000" opacity="0.32"/>
+      <circle id="cb"        cx="150" cy="130" r="10" fill="url(#gBall)" stroke="#ccccbb" stroke-width="1"/>
+      <circle id="cb-hi"     cx="146" cy="126" r="3.5" fill="#fff" opacity="0.55"/>
+      <circle id="cb-dot"    cx="150" cy="130" r="1.5" fill="#999" opacity="0.4"/>
+
+      <!-- Calibration markers -->
+      <circle id="cal-predicted" cx="0" cy="0" r="10" fill="none" stroke="#f0df70" stroke-width="2" stroke-dasharray="4,3" opacity="0"/>
+      <text id="cal-predicted-lbl" x="0" y="0" text-anchor="middle" font-family="Lato,sans-serif" font-size="7" font-weight="700" fill="#f0df70" opacity="0">PREDICTED</text>
+      <circle id="cal-actual" cx="0" cy="0" r="8" fill="#ff6060" stroke="#fff" stroke-width="1.5" opacity="0"/>
+      <text id="cal-actual-lbl" x="0" y="0" text-anchor="middle" font-family="Lato,sans-serif" font-size="7" font-weight="700" fill="#ff8080" opacity="0">ACTUAL</text>
+
+      <!-- Pocket tap zones (invisible, on top) -->
+    </g><!-- dyn -->
+    </g><!-- tbl-content -->
+    </svg>
+  </div><!-- top-box -->
+
+  <div class="sep"></div>
+
+  <!-- AIMING DIAGRAM — full-width interactive, CB draggable, OB centered -->
+  <div id="aim-wrap" style="position:relative;width:100%;padding-bottom:calc(300/460*100%);overflow:visible;background:rgba(0,0,0,0.28);">
+    <svg id="botsvg" viewBox="0 0 460 300" preserveAspectRatio="xMidYMid meet"
+         style="position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible;touch-action:none;-webkit-user-select:none;user-select:none;"
+         xmlns="http://www.w3.org/2000/svg">
+    </svg>
+  </div><!-- aim-wrap -->
+
+</div><!-- diagram-wrap -->
+
+
+<!-- ── TOGGLES ── -->
+<div style="display:flex;gap:5px;padding:6px 0 4px;">
+  <button id="btn-cushion" class="tog" onclick="toggleCushions()" style="background:#f0df70;color:#1a1400;">1 CUSHION</button>
+  <button id="btn-map"     class="tog" onclick="toggleMap()"      style="background:#f0df70;color:#1a1400;">MAP</button>
+  <button id="btn-ghost"   class="tog" onclick="toggleGhost()"    style="background:#f0df70;color:#1a1400;">GHOST</button>
+  <button id="cal-btn"     class="tog" onclick="toggleCal()"      style="background:#f0df70;color:#1a1400;">CAL</button>
+  <button id="rot-btn"     class="tog" onclick="cycleRotation()"  style="background:#f0df70;color:#1a1400;">⟳ 0°</button>
+  <button id="btn-bounce"  class="tog" onclick="toggleBounce()"   style="background:#f0df70;color:#1a1400;">BOUNCE</button>
+</div>
+</div>
+
+<!-- ── CALIBRATION PANEL ── -->
+<div id="cal-panel">
+  <div id="cal-instruction"></div>
+  <div id="cal-status"></div>
+  <div class="cal-shots">
+    <div class="cal-shot-dot" id="csd-0"></div>
+    <div class="cal-shot-dot" id="csd-1"></div>
+    <div class="cal-shot-dot" id="csd-2"></div>
+    <div class="cal-shot-dot" id="csd-3"></div>
+    <div class="cal-shot-dot" id="csd-4"></div>
+  </div>
+  <div class="cal-actions">
+    <button class="cal-action-btn primary" id="cal-shoot-btn" onclick="calShoot()">SHOOT →</button>
+    <button class="cal-action-btn" id="cal-undo-btn" onclick="calUndo()">UNDO</button>
+    <button class="cal-action-btn danger" id="cal-reset-btn" onclick="calReset()">RESET</button>
+  </div>
+  <div id="cal-result"></div>
+</div>
+<!-- ── BOUNCE PANEL ── -->
+<div id="bounce-pills"></div>
+<div id="bounce-wrap" style="display:none;background:rgba(0,0,0,0.28);border-radius:4px;margin-bottom:6px;overflow:hidden;">
+  <svg id="bounce-svg" viewBox="0 0 460 150" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;">
+    <rect width="460" height="150" fill="rgba(0,0,0,0.28)"/>
+  </svg>
+</div>
+
+<div class="sgroup">
+  <div class="sgroup-title">SHOT POWER, SPIN &amp; TABLE</div>
+  <div class="srow">
+    <span class="slbl">SPEED</span>
+    <input type="range" id="sl-spd" min="0" max="100" value="50" oninput="onSliders()">
+    <span class="sval" id="sv-spd">med</span>
+  </div>
+  <div class="srow" style="margin-top:6px">
+    <span class="slbl">SPIN</span>
+    <input type="range" id="sl-spn" min="-4" max="4" value="0" step="1" oninput="onSliders()">
+    <span class="sval" id="sv-spn" style="color:#e870b0">center</span>
+  </div>
+  <div class="srow" style="margin-top:6px">
+    <span class="slbl">VERT</span>
+    <input type="range" id="sl-vert" min="-4" max="4" value="0" step="1" oninput="onSliders()">
+    <span class="sval" id="sv-vert" style="color:#7dd3fc">center</span>
+  </div>
+  <div class="srow" style="margin-top:6px">
+    <span class="slbl">BIAS</span>
+    <input type="range" id="sl-bias" min="-50" max="50" value="0" oninput="onSliders()">
+    <span class="sval" id="sv-bias">neutral</span>
+  </div>
+</div>
+
+<!-- ── READOUTS ── -->
+<div id="readouts">
+  <div class="ro-row">
+    <span class="ro-lbl">CUT ANGLE</span>
+    <span class="ro-val" id="ro-cut" style="font-size:22px;color:#e87030">—</span>
+  </div>
+  <div class="ro-row">
+    <span class="ro-lbl">BALL FRACTION</span>
+    <span class="ro-val" id="ro-frac" style="font-size:22px;color:#88ee88">—</span>
+  </div>
+  <div class="ro-row">
+    <span class="ro-lbl">AIM POINT</span>
+    <span class="ro-val" id="ro-aim" style="font-size:22px;color:#e87030">—</span>
+  </div>
+  <div class="ro-row">
+    <span class="ro-lbl">THROW ADJUSTMENT</span>
+    <span class="ro-val" id="ro-throw" style="color:#e870b0">—</span>
+  </div>
+  <div class="ro-row">
+    <span class="ro-lbl">CB → OB DISTANCE</span>
+    <span class="ro-val" id="ro-dist" style="color:#a0d0a0">—</span>
+  </div>
+  <div class="ro-row">
+    <span class="ro-lbl">CONTACT RAIL ◆ DIAMOND</span>
+    <span class="ro-val" id="ro-contact">—</span>
+  </div>
+  <div class="ro-row" id="ro-contact2-row" style="display:none">
+    <span class="ro-lbl">2ND CONTACT RAIL ◆ DIAMOND</span>
+    <span class="ro-val" id="ro-contact2" style="color:#a78bfa">—</span>
+  </div>
+  <div class="ro-row">
+    <span class="ro-lbl">REBOUND ANGLE AT RAIL</span>
+    <span class="ro-val" id="ro-reb">—</span>
+  </div>
+  <div class="ro-row">
+    <span class="ro-lbl">TARGET</span>
+    <span class="ro-val" id="ro-pocket" style="color:#4ade80">—</span>
+  </div>
+</div>
+
+<div id="info-overlay">
+  <div id="info-inner">
+    <button id="info-close" onclick="toggleInfo()">✕</button>
+    <h2>LeStar Z's Banker</h2>
+    <p class="intro">A bank shot sends the object ball off a rail and into a pocket. This app calculates the geometry of that shot — where the ball needs to hit the rail, what angle you need to cut it, and how speed and spin change the result. Like all LeStar Z apps, it's a learning tool. Use it at the table to train your eye, then take that knowledge into the game.</p>
+
+    <p><strong>THE TABLE (top diagram):</strong> Shows a bird's-eye view of the table. Two balls are shown — white (cue ball) and red (object ball). Drag each one to match the actual positions on your table. Tap any of the six pockets to select your target. The app instantly draws the shot:</p>
+    <p>· <strong style="color:#f0df70">Gold dashed line</strong> — your approach: where the cue ball needs to travel to contact the object ball.<br>
+    · <strong style="color:#7dd3fc">Blue line</strong> — the object ball's path from your cue ball contact to the first rail.<br>
+    · <strong style="color:#4ade80">Green dashed line</strong> — the bank: object ball path from rail to pocket.<br>
+    · <strong style="color:#ffffff">White dashed circle</strong> — the ghost ball. This is the exact spot your cue ball center must pass through to send the object ball in the right direction. Aim for this.<br>
+    · <strong style="color:#ffffff">White ring on rail</strong> — the contact point on the rail. The diamond readout tells you where this falls in the standard diamond system.</p>
+
+    <p><strong>RAIL TABS:</strong> The colored buttons below the table show all valid rails for this bank. TOP, BTM, LFT, RGT. Tap one to switch. Some positions only have one valid option; others have two or three. In 2-CUSHION mode, tabs show rail pairs (e.g. TOP→LFT).</p>
+
+    <p><strong>THE AIMING DIAGRAM (bottom diagram):</strong> This is the Aimer view — a close-up of the object ball as you see it from behind the cue ball. The red ball is on the right. Your cue ball slides in from the left. The orange line (A) is the equator of the object ball — your reference line. The orange marker shows the inside edge of the cue ball at the required contact point. The percentage badge shows how much of the object ball you are hitting. The cut angle is shown top-right.</p>
+
+    <p><strong>SPEED:</strong> Faster shots compress the rail more, producing a shallower rebound angle. Slower shots rebound steeper. Match this to your intended shot power and the bank geometry shifts accordingly.</p>
+
+    <p><strong>SPIN:</strong> Side english on the cue ball does two things. First, it throws the object ball slightly off the pure geometric line — the diagram adjusts the aim point automatically. Second, the object ball arrives at the rail with its own running english from the cut, which opens or closes the rebound. The THROW ADJUSTMENT readout tells you how much to compensate.</p>
+
+    <p><strong>BIAS:</strong> Every table's rails play a little differently. If your banks consistently go long (past the pocket), push BIAS toward SHORT. If they come up short, push toward LONG. Dial this in over a practice session and it will make the whole app more accurate for your specific table.</p>
+
+    <p><strong>1 CUSHION / 2 CUSHIONS:</strong> Most banks use one rail. Occasionally the geometry requires two. Tap 2 CUSHIONS to see all valid two-rail routes — the app computes them using the same compressed-reflection physics, just chained twice. Two-cushion banks are harder to execute but sometimes the only option.</p>
+
+    <p><strong>DIAMONDS:</strong> The standard reference system. 0 at each corner, 4 at the side pockets on the long rails, 1–3 in between. A readout of TOP ◆ 2.50 means the contact point is exactly halfway between diamonds 2 and 3 on the top rail.</p>
+
+    <p><strong>ROTATE ⟳:</strong> Cycles the table through 0° / 90° / 180° / 270°. Turn it to match how you're standing at the table. Dragging works correctly at every orientation.</p>
+  </div>
+</div>
+
+</div><!-- card -->
+<footer>LeStar Z Pool Suite · Zukemeister · zukemeister.github.io</footer>
+
+<script>
+const DEG = 180/Math.PI, RAD = Math.PI/180;
+const Rb  = 82;   // OB radius in botsvg viewBox units
+const BOT_OCX = 148;
+
+const speedFactors = [0, 0.95, 0.72, 0.45, 0.22, 0.08];
+const spinLabels = {
+  '-4':'2 tips L','-3':'1½ tips L','-2':'1 tip L','-1':'½ tip L',
+  '0':'center','1':'½ tip R','2':'1 tip R','3':'1½ tips R','4':'2 tips R'
+};
+const FRACTIONS = [
+  {maxDeg:5,  label:'Full ball'},  {maxDeg:20, label:'¾ ball'},
+  {maxDeg:35, label:'½ ball'},    {maxDeg:52, label:'¼ ball'},
+  {maxDeg:70, label:'⅛ ball'},    {maxDeg:90, label:'Edge ball'},
+];
+
+const S = {
+  ob:         {x:230, y:150},   // OB just above center
+  cb:         {x:130, y:200},   // CB bottom-left — clear angled approach
+  ob2:        {x:370, y:190},   // reference ball
+  target:     {x:370, y:190},
+  diagCutDeg: 0,
+  _diagDragRh: undefined,
+  activeSol:  0,
+  speed:      0.5,
+  spin:       0,
+  vert:       0,    // vertical spin: +4=max follow, -4=max draw
+  bias:       0,
+  snooker:    false,
+  tableSize:  9,
+  metric:     false,
+  rotation:   0,
+  cushions:   1,
+};
+let drag = null;
+let diagDrag = false;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CONSTANTS (table geometry)
+// ─────────────────────────────────────────────────────────────────────────────
+const TL = { left:30, right:430, top:30, bottom:230 };
+const DU = 50;
+const BALL_R = 10;
+const RAIL_SHORT = { top:'TOP', bottom:'BTM', left:'LFT', right:'RGT' };
+const POCKETS = {
+  TL:{x:30, y:30, label:'Top Left'}, TM:{x:230,y:30, label:'Top Mid'}, TR:{x:430,y:30, label:'Top Right'},
+  BL:{x:30,y:230,label:'Bot Left'},  BM:{x:230,y:230,label:'Bot Mid'}, BR:{x:430,y:230,label:'Bot Right'},
+};
+const RAIL_COLORS = { top:'#f0df70', bottom:'#7dd3fc', left:'#f87171', right:'#4ade80' };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TABLE PROFILE — calibrated separately from player BIAS
+// tableK1: 1-cushion correction (negative = tighter, positive = looser)
+// tableK2: 2nd-cushion correction (second rail often plays differently)
+// ─────────────────────────────────────────────────────────────────────────────
+let tableK1 = 0.00;
+let tableK2 = 0.00;
+
+function loadTableProfile() {
+  try {
+    const p = JSON.parse(localStorage.getItem('lz-banker-profile') || '{}');
+    if (typeof p.k1 === 'number') tableK1 = p.k1;
+    if (typeof p.k2 === 'number') tableK2 = p.k2;
+  } catch(e) {}
+}
+
+function saveTableProfile() {
+  try { localStorage.setItem('lz-banker-profile', JSON.stringify({k1:tableK1, k2:tableK2})); } catch(e) {}
+}
+
+function profileStr() {
+  const k1 = Math.round(tableK1 * 100), k2 = Math.round(tableK2 * 100);
+  const desc = v => v === 0 ? 'uncalibrated' : (v > 0 ? '+' + v : '' + v);
+  return '1-rail: <strong>' + desc(k1) + '</strong>' +
+         '&nbsp;&nbsp;|&nbsp;&nbsp;' +
+         '2-rail: <strong>' + desc(k2) + '</strong>';
+}
+
+function kFactor(cushionNum, obToRailDist) {
+  // cushionNum: 1 = first rail, 2 = second rail
+  const base   = S.snooker ? 0.90 : 0.88;
+  const tbl    = cushionNum === 2 ? tableK2 : tableK1;
+  const player = S.bias * 0.18;
+
+  // OB rolling topspin effect (Alciatore: fully rolling OB plays ~1 diamond longer)
+  // OB starts sliding after CB contact, develops topspin over distance from cloth friction
+  // Full roll develops over ~100px at medium speed; faster shots need more distance
+  const rollDist = 100 * (0.5 + S.speed * 0.8);  // px needed for full roll
+  const rollFactor = obToRailDist
+    ? Math.min(1, obToRailDist / rollDist)
+    : 0.5;  // default assume half-rolled if distance unknown
+  // Full roll adds ~0.09 to k (plays longer); stun adds 0
+  const rollingBonus = rollFactor * 0.09;
+
+  // Vertical spin (follow/draw) — modifies rolling bonus
+  // Follow adds more topspin on top of natural roll; draw subtracts
+  const vertBonus = S.vert * 0.012;
+
+  return Math.max(0.40, Math.min(0.99, base - S.speed * 0.24 + tbl + player + rollingBonus + vertBonus));
+}
+
+// Forward ray from (px,py) in direction (dx,dy), finds nearest rail
+function rayHit(px, py, dx, dy, excludeRail) {
+  const rails = [
+    {name:'top',    h:true,  v:TL.top   },
+    {name:'bottom', h:true,  v:TL.bottom},
+    {name:'left',   h:false, v:TL.left  },
+    {name:'right',  h:false, v:TL.right },
+  ];
+  let best = null;
+  for (const r of rails) {
+    if (r.name === excludeRail) continue;
+    let t, ix, iy;
+    if (r.h) {
+      if (Math.abs(dy) < 1e-9) continue;
+      t = (r.v - py) / dy; if (t < 0.5) continue;
+      ix = px + t*dx; iy = r.v;
+      if (ix < TL.left-0.5 || ix > TL.right+0.5) continue;
+    } else {
+      if (Math.abs(dx) < 1e-9) continue;
+      t = (r.v - px) / dx; if (t < 0.5) continue;
+      ix = r.v; iy = py + t*dy;
+      if (iy < TL.top-0.5 || iy > TL.bottom+0.5) continue;
+    }
+    if (!best || t < best.t) best = {t, x:ix, y:iy, rail:r.name};
+  }
+  return best;
+}
+
+// Compressed rebound direction at rail
+function reboundDir(dx, dy, rail, k) {
+  let rdx, rdy;
+  if (rail === 'top' || rail === 'bottom') { rdx=dx; rdy=-dy*k; }
+  else { rdx=-dx*k; rdy=dy; }
+  // OB running english from cut (induced by cut angle)
+  return {dx:rdx, dy:rdy};
+}
+
+// Compute display shot from table geometry.
+// Table geometry (sol.contact) is always authoritative.
+// Forward solve: derive all lines from CB/OB positions and cut angle.
+// When diagDrag is active, cut angle comes from diagram. Otherwise from CB→OB geometry.
+function computeDiagShot(sol) {
+  // CB→OB direction
+  const cbx = S.ob.x - S.cb.x, cby = S.ob.y - S.cb.y;
+  const cbl = Math.hypot(cbx, cby);
+  const cbToObAngle = Math.atan2(cby, cbx);
+
+  // OB departure from the bank solution (authoritative rail contact)
+  const solθ = Math.atan2(sol.contact.y - S.ob.y, sol.contact.x - S.ob.x);
+  const sdx = Math.cos(solθ), sdy = Math.sin(solθ);
+
+  // Cut angle and side from table geometry
+  let tableCutDeg = 0;
+  if (cbl > 1) {
+    tableCutDeg = Math.acos(Math.max(-1, Math.min(1, (cbx/cbl)*sdx + (cby/cbl)*sdy))) * DEG;
+  }
+  const crossZ  = cbx * sdy - cby * sdx;
+  const tableRh = crossZ > 0;
+
+  // diagCutDeg drives display; rh always from live CB/OB geometry when not dragging
+  if (S.diagCutDeg === null) S.diagCutDeg = tableCutDeg < 0.5 ? 0 : Math.min(90, tableCutDeg);
+  const cutDeg = Math.min(90, S.diagCutDeg);
+
+  // When dragging diagram, use stored side; otherwise always recompute from table
+  const rh = diagDrag && S._diagDragRh !== undefined ? S._diagDragRh : tableRh;
+  if (!diagDrag) S._diagDragRh = tableRh;
+
+  // OB departure: CB→OB direction + cut rotation + cut-induced throw (CIT)
+  // Alciatore/Marlow model: throw peaks near ½ ball, reduces at faster speeds
+  const mu0 = 0.06;  // ball-to-ball friction coefficient (clean dry balls)
+  const muEff = mu0 * Math.exp(-S.speed * 2.5);  // decreases with speed
+  const cutRad2 = Math.min(cutDeg, 90) * RAD;
+  // CIT: throw angle toward CB approach side, peaks at ~45° cut
+  const throwAngle = Math.atan(muEff * Math.sin(2 * cutRad2) / 2);
+  // side: rh=true means CB left of line → OB throws left → positive rotation in SVG (downward)
+  const side = rh ? 1 : -1;
+  const departureAngle = cbToObAngle + side * cutRad2 - side * throwAngle;
+  const dx = Math.cos(departureAngle), dy = Math.sin(departureAngle);
+
+  // Forward ray: find where OB goes from OB position in departure direction
+  const hit = rayHit(S.ob.x, S.ob.y, dx, dy, null);
+  const contact = hit
+    ? {x: hit.x, y: hit.y, rail: hit.rail}
+    : sol.contact;  // fallback
+
+  // Rebound from contact — using Mathavan/Alciatore cushion model
+  const obToRailDist = Math.hypot(contact.x - S.ob.x, contact.y - S.ob.y);
+  const k = kFactor(1, obToRailDist);
+  let rdx = dx, rdy = dy;
+  if (contact.rail === 'top' || contact.rail === 'bottom') { rdy = -dy * k; }
+  else { rdx = -dx * k; }
+
+  // Cut-induced spin on OB at rail
+  const inducedSpin = Math.sin(cutRad2) * Math.cos(cutRad2) * 0.08 * side;
+  // Cue-applied sidespin effect
+  const cueSpin = S.spin * 0.018;
+  const totalSpin = inducedSpin + cueSpin;
+
+  const cosS = Math.cos(totalSpin), sinS = Math.sin(totalSpin);
+  const rdxS = rdx*cosS - rdy*sinS, rdyS = rdx*sinS + rdy*cosS;
+  const rLen = Math.hypot(rdxS, rdyS);
+  rdx = rdxS/rLen; rdy = rdyS/rLen;
+  const rebound = rayHit(contact.x, contact.y, rdx, rdy, contact.rail);
+  let reboundEnd, contact2 = null;
+
+  if (S.cushions === 2 && rebound) {
+    // Second cushion — separate table constant kFactor(2)
+    contact2 = {x: rebound.x, y: rebound.y, rail: rebound.rail};
+    const k2 = kFactor(2, Math.hypot(contact2.x - contact.x, contact2.y - contact.y));
+    let rdx2 = rdx, rdy2 = rdy;
+    if (contact2.rail === 'top' || contact2.rail === 'bottom') { rdy2 = -rdy2 * k2; }
+    else { rdx2 = -rdx2 * k2; }
+    const rLen2 = Math.hypot(rdx2, rdy2);
+    rdx2 /= rLen2; rdy2 /= rLen2;
+    const rebound2 = rayHit(contact2.x, contact2.y, rdx2, rdy2, contact2.rail);
+    reboundEnd = rebound2
+      ? {x: rebound2.x, y: rebound2.y}
+      : {x: contact2.x + rdx2*400, y: contact2.y + rdy2*400};
+  } else {
+    reboundEnd = rebound
+      ? {x: rebound.x, y: rebound.y}
+      : {x: contact.x + rdx*400, y: contact.y + rdy*400};
+  }
+
+  let rebDeg;
+  if (contact.rail === 'top' || contact.rail === 'bottom')
+    rebDeg = Math.abs(Math.atan2(Math.abs(dy), Math.abs(dx)) * DEG);
+  else
+    rebDeg = Math.abs(Math.atan2(Math.abs(dx), Math.abs(dy)) * DEG);
+
+  return {
+    ...sol,
+    θ: departureAngle,
+    contact, rail: contact.rail,
+    contact2,
+    cutDeg,
+    aimFraction: Math.sin(Math.min(cutDeg, 90) * RAD),
+    _reboundEnd: reboundEnd, rebDeg,
+  };
+}
+
+// Find rail contact point for OB banking into pocket off a given rail
+function bankContact(ob, pocket, railName) {
+  const obToRailDist = Math.hypot(
+    railName === 'left' || railName === 'right' ? (railName === 'left' ? TL.left : TL.right) - ob.x : ob.x - ob.x,
+    railName === 'top'  || railName === 'bottom' ? (railName === 'top' ? TL.top : TL.bottom) - ob.y : ob.y - ob.y
+  );
+  const k = kFactor(1, Math.abs(
+    railName === 'top' ? ob.y - TL.top :
+    railName === 'bottom' ? TL.bottom - ob.y :
+    railName === 'left' ? ob.x - TL.left :
+    TL.right - ob.x
+  ));
+  const rails = {
+    top:    {h:true,  v:TL.top},
+    bottom: {h:true,  v:TL.bottom},
+    left:   {h:false, v:TL.left},
+    right:  {h:false, v:TL.right},
+  };
+  const r = rails[railName];
+  let cx, cy, A;
+  if (r.h) {
+    const dp = Math.abs(ob.y - r.v), dt = Math.abs(pocket.y - r.v);
+    if (dp < 2 || dt < 2) return null;
+    if ((ob.y - r.v) * (pocket.y - r.v) <= 0) return null;
+    A = dt / (dp * k);
+    cx = (pocket.x + A * ob.x) / (1 + A); cy = r.v;
+    if (cx < TL.left || cx > TL.right) return null;
+  } else {
+    const dp = Math.abs(ob.x - r.v), dt = Math.abs(pocket.x - r.v);
+    if (dp < 2 || dt < 2) return null;
+    if ((ob.x - r.v) * (pocket.x - r.v) <= 0) return null;
+    A = dt / (dp * k);
+    cy = (pocket.y + A * ob.y) / (1 + A); cx = r.v;
+    if (cy < TL.top || cy > TL.bottom) return null;
+  }
+  return {x:cx, y:cy, rail:railName};
+}
+
+// Compute all valid bank solutions for current OB + pocket
+function allSolutions() {
+  return solutions1Rail();
+}
+
+function solutions1Rail() {
+  const pocket = S.target;
+  return ['top','bottom','left','right']
+    .map(r => bankContact(S.ob, pocket, r))
+    .filter(c => c !== null)
+    .map(contact => buildSol1(contact));
+}
+
+function buildSol1(contact) {
+  const θ = Math.atan2(contact.y - S.ob.y, contact.x - S.ob.x);
+
+  // ── Spin physics stage 1: throw at OB contact ──
+  // Aimer protocol: cutThrow + spinThrow, modulated by speed factor
+  const cbToOb  = {x: S.ob.x - S.cb.x, y: S.ob.y - S.cb.y};
+  const d       = Math.hypot(cbToOb.x, cbToOb.y);
+  let cutDeg = 0, Z_des = 0, Z_aim = 0, aimFraction = 0, squirtFraction = 0;
+  if (d > 1) {
+    const cbToObUnit = {x: cbToOb.x/d, y: cbToOb.y/d};
+    const depUnit    = {x: Math.cos(θ), y: Math.sin(θ)};
+    const dot  = Math.max(-1, Math.min(1, cbToObUnit.x*depUnit.x + cbToObUnit.y*depUnit.y));
+    Z_des  = Math.acos(dot);
+    cutDeg = Z_des * DEG;
+    const cutRaw   = Math.sin(Z_des);
+    const speedLvl = Math.max(1, Math.min(5, Math.floor(S.speed * 5) + 1));
+    const sf       = speedFactors[speedLvl];
+    const cutThrow = Math.atan(0.015 * Math.cos(Z_des));
+    const spinThrow= S.spin * 1.2 * RAD;
+    Z_aim          = Math.max(0, Math.min(Math.PI/2, Z_des + (cutThrow + spinThrow) * sf));
+    // Squirt: S.spin tips * 0.5°/tip, fades at steep cuts
+    const squirtAngle = S.spin * 0.5 * RAD;
+    const squirtFade  = cutRaw < 0.005 ? 0 : Math.max(0, Math.min(1, 1 - (cutRaw - 0.55) / 0.30));
+    squirtFraction    = Math.max(-0.25, Math.min(0.25, (d/2.25) * Math.tan(squirtAngle) * squirtFade));
+    aimFraction       = Math.max(0, Math.min(1, Math.sin(Z_aim) - squirtFraction));
+  }
+
+  // Ghost ball: where CB center must be to achieve aimFraction contact
+  // aimFraction = sin(cut angle) = lateral offset / (2*BALL_R)
+  // ghost is behind OB along the required approach direction, adjusted for throw
+  const ghost = {
+    x: S.ob.x - 2 * BALL_R * Math.cos(θ),
+    y: S.ob.y - 2 * BALL_R * Math.sin(θ),
+  };
+
+  // ── Spin physics stage 2: OB running english at rail ──
+  // OB arrives at rail with induced side spin from cut.
+  // Running english (spin in direction of travel) opens rebound; reverse closes it.
+  // Induced spin magnitude: spin * cos(cutAngle) * 0.10 rad
+  const inducedRailSpin = S.spin * Math.cos(Z_des) * 0.10;
+
+  const dx = Math.cos(θ), dy = Math.sin(θ);
+  let rebDeg;
+  if (contact.rail === 'top' || contact.rail === 'bottom')
+    rebDeg = Math.abs(Math.atan2(Math.abs(dy), Math.abs(dx)) * DEG);
+  else
+    rebDeg = Math.abs(Math.atan2(Math.abs(dx), Math.abs(dy)) * DEG);
+  // Adjust rebound angle display for induced spin
+  rebDeg = Math.max(0, rebDeg + inducedRailSpin * DEG);
+
+  const cross = cbToOb.x * dy - cbToOb.y * dx;
+  return {
+    contact, contact2:null, θ, ghost,
+    cutDeg, Z_des, Z_aim, aimFraction, squirtFraction,
+    rebDeg, cross, rail:contact.rail,
+    label: RAIL_SHORT[contact.rail]
+  };
+}
+
+function solutions2Rail() {
+  const pocket = S.target;
+  const k = kFactor();
+  const railNames = ['top','bottom','left','right'];
+  const results = [];
+
+  for (const r1 of railNames) {
+    for (const r2 of railNames) {
+      if (r1 === r2) continue;
+
+      // Use virtual image method:
+      // Virtual image of pocket through r2, then find c1 on r1 from OB to virtual image
+      const vImg = virtualImage(pocket, r2, k);
+      if (!vImg) continue;
+      const c1 = bankContact(S.ob, vImg, r1);
+      if (!c1) continue;
+
+      // Now find c2 on r2 from c1 to pocket
+      const c2 = bankContact(c1, pocket, r2);
+      if (!c2) continue;
+
+      // Verify geometry makes sense — c1 and c2 should not be too close
+      if (Math.hypot(c1.x-c2.x, c1.y-c2.y) < 15) continue;
+
+      const θ = Math.atan2(c1.y - S.ob.y, c1.x - S.ob.x);
+      // Build full solution using buildSol1 which handles all spin physics
+      const base = buildSol1(c1);
+      // Override rail/contact with 2-cushion specifics
+      base.contact  = c1;
+      base.contact2 = c2;
+      base.rail2    = r2;
+      base.label    = RAIL_SHORT[r1] + '→' + RAIL_SHORT[r2];
+      results.push(base);
+    }
+  }
+  return results.slice(0, 6); // cap at 6 solutions
+}
+
+// Virtual image of target point T reflected through rail (for 2-cushion)
+function virtualImage(T, railName, k) {
+  const rails = {
+    top:    {h:true,  v:TL.top},
+    bottom: {h:true,  v:TL.bottom},
+    left:   {h:false, v:TL.left},
+    right:  {h:false, v:TL.right},
+  };
+  const r = rails[railName];
+  if (r.h) {
+    const d = T.y - r.v;
+    if (Math.abs(d) < 2) return null;
+    return {x: T.x, y: r.v - d / k};
+  } else {
+    const d = T.x - r.v;
+    if (Math.abs(d) < 2) return null;
+    return {x: r.v - d / k, y: T.y};
+  }
+}
+
+function ballFraction(deg) {
+  for (const f of FRACTIONS) if (deg <= f.maxDeg) return f.label;
+  return 'Edge ball';
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AIMER-STYLE BOTTOM DIAGRAM
+// ─────────────────────────────────────────────────────────────────────────────
+function fracStr(hf) {
+  if (hf < 0.005)  return 'full ball';
+  if (hf < 0.125)  return '⅛ ball';
+  if (hf < 0.250)  return '¼ ball';
+  if (hf < 0.375)  return '⅜ ball';
+  if (hf < 0.500)  return '½ ball';
+  if (hf < 0.625)  return '⅝ ball';
+  if (hf < 0.750)  return '¾ ball';
+  if (hf < 0.875)  return '⅞ ball';
+  if (hf < 0.9375) return '15/16 ball';
+  if (hf < 0.9999) return 'thin cut';
+  return 'miss';
+}
+
+function clipToBox(ox,oy,tx,ty,W,H,m){
+  var dx=tx-ox,dy=ty-oy;
+  if(!dx&&!dy) return [tx,ty];
+  var t=1;
+  if(dx<0) t=Math.min(t,(m-ox)/dx); else if(dx>0) t=Math.min(t,(W-m-ox)/dx);
+  if(dy<0) t=Math.min(t,(m-oy)/dy); else if(dy>0) t=Math.min(t,(H-m-oy)/dy);
+  t=Math.max(0,Math.min(1,t));
+  return [ox+t*dx, oy+t*dy];
+}
+
+function drawBot(sol) {
+  var W=460, H=300, r=Rb;
+  var DRAG_RANGE = 224;
+
+  var cutDeg = (S.diagCutDeg !== null && S.diagCutDeg !== undefined) ? S.diagCutDeg
+             : (sol.cutDeg || 0);
+  // Ensure at least a sliver so CB is always visible
+  cutDeg = Math.max(0, Math.min(90, cutDeg));
+  var cutRaw = Math.sin(cutDeg * RAD);
+
+  // OB always centered; CB slides left (rh) or right (!rh)
+  var ocx = W/2;
+  var ocy = 155;
+  var laX1 = 8, laX2 = W-8;
+
+  var rh = (S._diagDragRh !== undefined && S.diagCutDeg !== null)
+           ? S._diagDragRh
+           : (sol.cross < 0);
+  var aimF = cutRaw;
+  var ccx  = rh ? ocx - aimF*2*r : ocx + aimF*2*r;
+  var edgeX   = rh ? ccx + r : ccx - r;
+  var clipX   = rh ? edgeX : (ocx - r);
+  var revealW = rh ? Math.max(0,(ocx+r)-edgeX) : Math.max(0,edgeX-(ocx-r));
+  var aimP = Math.round(aimF*100);
+
+  // Sixteenth ticks — Aimer exact
+  var fracsLH = ['','','⅛','','¼','','⅜','','','','⅝','','¾','','⅞','',''];
+  var fracsRH = ['','','⅞','','¾','','⅝','','','','⅜','','¼','','⅛','',''];
+  var fracs = rh ? fracsRH : fracsLH;
+  var pct0  = rh ? '100%' : '0%';
+  var pct16 = rh ? '0%' : '100%';
+  var ticks = '';
+  for (var i=0; i<=16; i++) {
+    var tx = (ocx-r) + (i/16)*(2*r);
+    var big=(i===0||i===8||i===16), med=(i===4||i===12);
+    var th=big?17:med?12:5, sw=big?2.2:med?1.5:0.8, op=big?1.0:med?0.65:0.32;
+    ticks += '<line x1="'+tx+'" y1="'+(ocy-th)+'" x2="'+tx+'" y2="'+(ocy+th)+'" stroke="#7fd0f0" stroke-width="'+sw+'" opacity="'+op+'"/>';
+    if(i===0)  ticks+='<text x="'+tx+'" y="'+(ocy-r-22)+'" text-anchor="middle" font-family="Lato,sans-serif" font-size="11" font-weight="700" fill="#b0e8ff">'+pct0+'</text>';
+    if(i===8)  ticks+='<text x="'+tx+'" y="'+(ocy-r-22)+'" text-anchor="middle" font-family="Lato,sans-serif" font-size="11" font-weight="700" fill="#b0e8ff">50%</text>';
+    if(i===16) ticks+='<text x="'+tx+'" y="'+(ocy-r-22)+'" text-anchor="middle" font-family="Lato,sans-serif" font-size="11" font-weight="700" fill="#b0e8ff">'+pct16+'</text>';
+    var fr = fracs[i];
+    if(fr) ticks+='<text x="'+tx+'" y="'+(ocy+r+30)+'" text-anchor="middle" font-family="Lato,sans-serif" font-size="20" font-weight="700" fill="#ffffff">'+fr+'</text>';
+  }
+
+  var out = '<rect width="460" height="'+H+'" fill="rgba(0,0,0,0.28)"/>';
+  out += '<defs><clipPath id="revClip"><rect x="'+clipX+'" y="'+(ocy-r)+'" width="'+revealW+'" height="'+(2*r)+'"/></clipPath></defs>';
+
+  // OB — Aimer exact
+  out += '<circle cx="'+ocx+'" cy="'+ocy+'" r="'+r+'" fill="url(#OGdB)" stroke="#2a0606" stroke-width="1.5"/>';
+  out += '<circle cx="'+ocx+'" cy="'+ocy+'" r="'+r+'" fill="url(#OGB)" stroke="none" clip-path="url(#revClip)"/>';
+  out += '<circle cx="'+ocx+'" cy="'+ocy+'" r="'+r+'" fill="none" stroke="#8a1818" stroke-width="1.5" clip-path="url(#revClip)"/>';
+
+  // Line A — Aimer exact
+  out += '<line x1="'+laX1+'" y1="'+ocy+'" x2="'+laX2+'" y2="'+ocy+'" stroke="#7fd0f0" stroke-width="3" stroke-linecap="round"/>';
+  out += '<text x="'+(laX1-8)+'" y="'+(ocy+5)+'" text-anchor="end" font-family="Lato,sans-serif" font-size="15" font-weight="900" fill="#b0e8ff">A</text>';
+  out += ticks;
+
+  // CB — Aimer exact
+  out += '<circle cx="'+ccx+'" cy="'+ocy+'" r="'+r+'" fill="url(#CGB)" stroke="#aaa" stroke-width="1.5"/>';
+  out += '<line x1="'+(ccx-r*0.74)+'" y1="'+ocy+'" x2="'+(ccx+r*0.74)+'" y2="'+ocy+'" stroke="rgba(0,0,0,0.13)" stroke-width="1.2"/>';
+  out += '<line x1="'+ccx+'" y1="'+(ocy-r*0.74)+'" x2="'+ccx+'" y2="'+(ocy+r*0.74)+'" stroke="rgba(0,0,0,0.13)" stroke-width="1.2"/>';
+  // Tip dot: moves horizontally with side spin, vertically with vert spin
+  var spinDir = rh ? -1 : 1;
+  var tipX = ccx + spinDir * (S.spin/4) * 0.62 * r;
+  var tipY = ocy - (S.vert/4) * 0.62 * r;
+  out += '<circle cx="'+tipX+'" cy="'+tipY+'" r="'+(r*0.10)+'" fill="#000" opacity="0.85"/>';
+
+  // Edge marker + badge — Aimer exact
+  var showMarker = rh ? edgeX < ocx+r-3 : edgeX > ocx-r+3;
+  if (showMarker) {
+    out += '<line x1="'+edgeX+'" y1="'+(ocy-r+6)+'" x2="'+edgeX+'" y2="'+(ocy+r-6)+'" stroke="#e87030" stroke-width="4" stroke-linecap="round" stroke-dasharray="6,4"/>';
+    var lblX = Math.max(72, Math.min(edgeX, W-76));
+    out += '<text x="'+lblX+'" y="'+(ocy-r-8)+'" text-anchor="middle" font-family="Lato,sans-serif" font-size="11" font-weight="700" fill="#ffb080">inside edge</text>';
+    var bx = Math.max(44, Math.min(edgeX, W-44));
+    out += '<rect x="'+(bx-40)+'" y="'+(ocy+r+38)+'" width="80" height="34" rx="7" fill="#e87030"/>';
+    out += '<text x="'+bx+'" y="'+(ocy+r+60)+'" text-anchor="middle" font-family="Lato,sans-serif" font-size="18" font-weight="900" fill="white">'+aimP+'%</text>';
+  } else {
+    var hintX = rh ? ocx-r-70 : ocx+r+24;
+    var anchor = rh ? 'end' : 'start';
+    out += '<text x="'+hintX+'" y="'+(ocy+5)+'" text-anchor="'+anchor+'" font-family="Lato,sans-serif" font-size="13" font-weight="700" fill="rgba(255,255,255,0.4)">'+(rh?'◄ Drag to begin':'Drag ▶ to begin')+'</text>';
+  }
+
+  // Three readouts across top of eye-level: BALL FRACTION | AIM POINT | CUT
+  var Zdeg = Math.round(cutDeg);
+  var frac = fracStr(aimF);
+  // Left — Ball Fraction
+  out += '<text x="8" y="24" font-family="Lato,sans-serif" font-size="16" font-weight="900" fill="#f0df70">'+frac+'</text>';
+  out += '<text x="8" y="36" font-family="Lato,sans-serif" font-size="7" font-weight="700" letter-spacing="1" fill="rgba(255,255,255,0.4)">BALL FRACTION</text>';
+  // Center — Aim Point
+  var aimPct = aimP + '%';
+  out += '<text x="230" y="24" text-anchor="middle" font-family="Lato,sans-serif" font-size="16" font-weight="900" fill="#e87030">'+aimPct+'</text>';
+  out += '<text x="230" y="36" text-anchor="middle" font-family="Lato,sans-serif" font-size="7" font-weight="700" letter-spacing="1" fill="rgba(255,255,255,0.4)">AIM POINT</text>';
+  // Right — Cut Angle badge
+  out += '<rect x="382" y="6" width="70" height="36" rx="6" fill="rgba(232,112,48,0.15)"/>';
+  out += '<text x="417" y="24" text-anchor="middle" font-family="Lato,sans-serif" font-size="16" font-weight="900" fill="#e87030">'+Zdeg+'°</text>';
+  out += '<text x="417" y="36" text-anchor="middle" font-family="Lato,sans-serif" font-size="7" font-weight="700" letter-spacing="1" fill="rgba(255,255,255,0.4)">CUT</text>';
+
+  if (S.spin !== 0) out += '<text x="'+(W-8)+'" y="'+(H-8)+'" text-anchor="end" font-family="Lato,sans-serif" font-size="8" font-weight="700" fill="#e870b0">'+spinLabels[String(S.spin)]+'</text>';
+  out += '<text x="'+(W-8)+'" y="18" text-anchor="end" font-family="Lato,sans-serif" font-size="8" font-weight="700" letter-spacing="0.12em" fill="rgba(255,255,255,0.25)">EYE LEVEL</text>';
+
+  document.getElementById('botsvg').innerHTML = out;
+}
+
+// HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+function toDiamond(x,y,rail){return(rail==='top'||rail==='bottom')?((x-TL.left)/DU).toFixed(2):((y-TL.top)/DU).toFixed(2);}
+function ballFraction(deg){for(const f of FRACTIONS)if(deg<=f.maxDeg)return f.label;return 'Edge ball';}
+const $ = id => document.getElementById(id);
+function sL(id,x1,y1,x2,y2){const e=$(id);if(!e)return;e.setAttribute('x1',x1);e.setAttribute('y1',y1);e.setAttribute('x2',x2);e.setAttribute('y2',y2);}
+function sC(id,cx,cy){const e=$(id);if(!e)return;e.setAttribute('cx',cx);e.setAttribute('cy',cy);}
+function sV(id,v){const e=$(id);if(e)e.style.opacity=v?'1':'0';}
+function sT(id,v){const e=$(id);if(e)e.textContent=v;}
+function sA(id,attr,v){const e=$(id);if(e)e.setAttribute(attr,v);}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RENDER
+// ─────────────────────────────────────────────────────────────────────────────
+function render() {
+  const {ob, cb} = S;
+
+  // Move balls
+  sC('ob',        ob.x,     ob.y);
+  sC('ob-shadow', ob.x+1.5, ob.y+2);
+  sC('ob-hi',     ob.x-3.5, ob.y-3.5);
+  sC('cb',        cb.x,     cb.y);
+  sC('cb-shadow', cb.x+1.5, cb.y+2);
+  sC('cb-hi',     cb.x-3.5, cb.y-3.5);
+  sC('cb-dot',    cb.x,     cb.y);
+
+  // Move second object ball (visual reference)
+  sC('ob2',        S.ob2.x,     S.ob2.y);
+  sC('ob2-shadow', S.ob2.x+1.5, S.ob2.y+2);
+  sC('ob2-hi',     S.ob2.x-3.5, S.ob2.y-3.5);
+
+  // Hide all dynamic lines
+  ['ob-path','bk-path','bk-path2','contact-dot','contact-dot2','ghost-ball'].forEach(id=>sV(id,false));
+  ['aim-cut-val','aim-cut-lbl','aim-frac-val','aim-frac-lbl'].forEach(id=>sV(id,false));
+
+  const sols = allSolutions();
+  if (sols.length === 0) {
+    ['ro-cut','ro-frac','ro-aim','ro-dist','ro-throw','ro-contact','ro-reb'].forEach(id=>sT(id,'—'));
+    $('ro-contact2-row').style.display = 'none';
+    document.getElementById('botsvg').innerHTML = '<rect width="460" height="300" fill="rgba(0,0,0,0.28)"/><text x="230" y="155" text-anchor="middle" font-family="Lato,sans-serif" font-size="13" fill="rgba(255,255,255,0.25)">No valid bank</text>';
+    return;
+  }
+  if (S.activeSol >= sols.length) S.activeSol = 0;
+  let baseSol = sols[S.activeSol];
+  const sol = computeDiagShot(baseSol);
+  const pocket = S.target;
+
+  // ── TABLE GRAPHICS ──
+
+  // Ghost ball — shown when toggled on
+  if (ghostOn) {
+    // Ghost sits one ball-diameter behind OB along the approach direction (opposite departure)
+    const gx = S.ob.x - 2 * BALL_R * Math.cos(sol.θ);
+    const gy = S.ob.y - 2 * BALL_R * Math.sin(sol.θ);
+    sC('ghost-ball', gx, gy);
+    sV('ghost-ball', true);
+  } else {
+    sV('ghost-ball', false);
+  }
+
+  // OB path: OB → rail contact
+  const startOff = BALL_R + 2;
+  const obDx = sol.contact.x - ob.x, obDy = sol.contact.y - ob.y;
+  const obLen = Math.hypot(obDx, obDy);
+  if (obLen > 1) {
+    const nox = obDx/obLen, noy = obDy/obLen;
+    sL('ob-path', ob.x + nox*startOff, ob.y + noy*startOff, sol.contact.x, sol.contact.y);
+    sV('ob-path', true);
+  }
+
+  // Bank path: contact → rebound end (or pocket if not dragging)
+  const bkTarget = sol._reboundEnd || pocket;
+  if (sol.contact2) {
+    sL('bk-path',  sol.contact.x, sol.contact.y, sol.contact2.x, sol.contact2.y);
+    sL('bk-path2', sol.contact2.x, sol.contact2.y, bkTarget.x, bkTarget.y);
+    sV('bk-path',  true);
+    sV('bk-path2', true);
+    sC('contact-dot2', sol.contact2.x, sol.contact2.y);
+    sV('contact-dot2', true);
+  } else {
+    sL('bk-path', sol.contact.x, sol.contact.y, bkTarget.x, bkTarget.y);
+    sV('bk-path', true);
+    sV('bk-path2', false);
+    sV('contact-dot2', false);
+  }
+
+  // Contact dot
+  sC('contact-dot', sol.contact.x, sol.contact.y);
+  sV('contact-dot', true);
+
+  // ── AIMING DIAGRAM ──
+  drawBot(sol);
+  drawBankerBounce(sol);
+
+  // ── READOUTS ──
+  const displayCutDeg = Math.abs(S.diagCutDeg !== null ? S.diagCutDeg : sol.cutDeg) < 0.5 ? 0 : (S.diagCutDeg !== null ? S.diagCutDeg : sol.cutDeg);
+  const displayAimF   = Math.sin(Math.min(displayCutDeg, 90) * RAD);
+  sT('ro-cut', displayCutDeg < 0.5 ? '0°' : displayCutDeg.toFixed(1) + '°');
+  sT('ro-frac', fracStr(displayAimF));
+  sT('ro-aim',  Math.round(displayAimF * 100) + '%');
+
+  // CB→OB distance
+  const svgDist = Math.hypot(S.ob.x - S.cb.x, S.ob.y - S.cb.y);
+  const distFt  = svgDist / 400 * S.tableSize;
+  const distEl  = $('ro-dist');
+  if (distEl) {
+    if (S.metric) {
+      const m = distFt * 0.3048;
+      distEl.textContent = m < 0.3 ? (m*100).toFixed(0)+'cm' : m.toFixed(2)+'m';
+    } else {
+      distEl.textContent = distFt < 1 ? Math.round(distFt*12)+'"' : distFt.toFixed(1)+"'";
+    }
+  }
+
+  const geoFrac   = Math.sin(sol.Z_des !== undefined ? sol.Z_des : displayCutDeg * RAD);
+  const throwDiff = Math.round(displayAimF * 100) - Math.round(geoFrac * 100);
+  if (Math.abs(throwDiff) < 1 || sol.cutDeg < 1) {
+    sT('ro-throw', 'none');
+  } else {
+    sT('ro-throw', (throwDiff > 0 ? '+' : '') + throwDiff + '% aim ' + (throwDiff > 0 ? 'thinner' : 'fuller'));
+  }
+
+  sT('ro-contact', RAIL_SHORT[sol.rail] + ' ◆ ' + toDiamond(sol.contact.x, sol.contact.y, sol.rail));
+  sT('ro-reb',     sol.rebDeg.toFixed(1) + '° from rail');
+  
+
+  const row2 = $('ro-contact2-row');
+  if (sol.contact2) {
+    row2.style.display = 'flex';
+    sT('ro-contact2', RAIL_SHORT[sol.rail2] + ' ◆ ' + toDiamond(sol.contact2.x, sol.contact2.y, sol.rail2));
+  } else {
+    row2.style.display = 'none';
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DIAGRAM DRAG (botsvg CB)
+// ─────────────────────────────────────────────────────────────────────────────
+const botsvg = document.getElementById('botsvg');
+
+function botSvgPt(e) {
+  const pt = botsvg.createSVGPoint();
+  const src = e.touches ? e.touches[0] : e;
+  pt.x = src.clientX; pt.y = src.clientY;
+  return pt.matrixTransform(botsvg.getScreenCTM().inverse());
+}
+
+botsvg.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  diagDrag = true;
+  botsvg.setPointerCapture(e.pointerId);
+  updateDiagCut(botSvgPt(e).x);
+  render();
+});
+botsvg.addEventListener('pointermove', e => {
+  if (!diagDrag) return; e.preventDefault();
+  updateDiagCut(botSvgPt(e).x);
+  render();
+});
+
+function updateDiagCut(svgX) {
+  const ocx = 230;
+  const DRAG_RANGE = 224;
+  const raw     = svgX - ocx;
+  const clamped = Math.max(-DRAG_RANGE, Math.min(DRAG_RANGE, raw));
+  // Clamp to 89° max so CB never goes past 100% on either side
+  S.diagCutDeg  = Math.min(90, Math.abs(clamped) / DRAG_RANGE * 90);
+  S._diagDragRh = (clamped < 0);
+}
+botsvg.addEventListener('pointerup',     () => { diagDrag = false; });
+botsvg.addEventListener('pointercancel', () => { diagDrag = false; });
+
+function renderDiagram() {
+  // Full render so the table ghost ball stays in sync with diagram CB position
+  render();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TABLE DRAG (tbl SVG)
+// ─────────────────────────────────────────────────────────────────────────────
+const svg = $('tbl');
+
+function svgPt(e) {
+  const pt = svg.createSVGPoint();
+  const src = e.touches ? e.touches[0] : e;
+  pt.x = src.clientX; pt.y = src.clientY;
+  return pt.matrixTransform($('tbl-content').getScreenCTM().inverse());
+}
+function clampBall(x,y){return{x:Math.max(TL.left+BALL_R,Math.min(TL.right-BALL_R,x)),y:Math.max(TL.top+BALL_R,Math.min(TL.bottom-BALL_R,y))};}
+
+function clampTable(x,y){return{x:Math.max(TL.left,Math.min(TL.right,x)),y:Math.max(TL.top,Math.min(TL.bottom,y))};}
+
+svg.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  const p = svgPt(e);
+  // Calibration tap mode — any tap on table records actual endpoint
+  if (calMode && calPhase === 'tap') {
+    calTapActual(p);
+    return;
+  }
+  const {ob, cb, ob2} = S;
+  if (Math.hypot(p.x-ob.x,  p.y-ob.y)  < 22) { drag='ob';  svg.setPointerCapture(e.pointerId); return; }
+  if (Math.hypot(p.x-cb.x,  p.y-cb.y)  < 22) { drag='cb';  svg.setPointerCapture(e.pointerId); return; }
+  if (Math.hypot(p.x-ob2.x, p.y-ob2.y) < 22) { drag='ob2'; svg.setPointerCapture(e.pointerId); return; }
+});
+svg.addEventListener('pointermove', e => {
+  if (!drag) return; e.preventDefault();
+  const p = svgPt(e);
+  if      (drag==='ob')  { S.ob  = clampBall(p.x, p.y); S.diagCutDeg = null; S._diagDragRh = undefined; }
+  else if (drag==='cb')  { S.cb  = clampBall(p.x, p.y); S.diagCutDeg = null; S._diagDragRh = undefined; }
+  else if (drag==='ob2') { S.ob2 = clampBall(p.x, p.y); }
+  render();
+});
+svg.addEventListener('pointerup',    () => { drag=null; });
+svg.addEventListener('pointercancel',() => { drag=null; });
+
+// Keyboard controls:
+// Left/Right → side spin  (sl-spn, -4..4)
+// Up/Down    → vertical english (sl-vert, -4..4)
+// [ / ]      → speed (sl-spd, 0..100, step 10)
+document.addEventListener('keydown', e => {
+  let handled = false;
+  const spd = $('sl-spd');
+  // Arrows move CB in the aiming diagram (like Aimer)
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+    const oneDeg = Math.asin(0.01) * (180/Math.PI);
+    const cur = S.diagCutDeg !== null ? S.diagCutDeg : 0;
+    const rh  = S._diagDragRh !== undefined ? S._diagDragRh : false;
+    let signed = rh ? -cur : cur;
+    signed += e.key === 'ArrowRight' ? oneDeg : -oneDeg;
+    signed = Math.max(-90, Math.min(90, signed));
+    if (Math.abs(signed) < 0.001) signed = e.key === 'ArrowRight' ? oneDeg : -oneDeg;
+    S._diagDragRh = signed < 0;
+    S.diagCutDeg  = Math.abs(signed);
+    diagDrag = true;
+    handled = true;
+  }
+  if (e.key === '[') { spd.value = Math.max(  0, parseInt(spd.value) - 10); handled = true; }
+  if (e.key === ']') { spd.value = Math.min(100, parseInt(spd.value) + 10); handled = true; }
+  if (!handled) return;
+  e.preventDefault();
+  onSliders();
+  render();
+  diagDrag = false;
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CONTROLS
+// ─────────────────────────────────────────────────────────────────────────────
+function toggleCushions() {
+  S.cushions = S.cushions === 1 ? 2 : 1;
+  S.activeSol = 0;
+  $('btn-cushion').textContent = S.cushions === 1 ? '1 CUSHION' : '2 CUSHIONS';
+  render();
+}
+
+let mapOn = true;
+let ghostOn = true;
+let bounceOn = false;
+
+function toggleGhost() {
+  ghostOn = !ghostOn;
+  const btn = $('btn-ghost');
+  
+  render();
+}
+function toggleMap() {
+  mapOn = !mapOn;
+  
+  const layer = $('map-layer');
+  layer.style.transition = 'opacity 0.2s';
+  layer.style.opacity = mapOn ? '1' : '0';
+}
+
+function toggleBounce() {
+  bounceOn = !bounceOn;
+  const wrap  = $('bounce-wrap');
+  const pills = $('bounce-pills');
+  if (wrap)  wrap.style.display  = bounceOn ? 'block' : 'none';
+  if (pills) pills.innerHTML = '';
+  render();
+}
+
+function angleFromRail(dx, dy, rail) {
+  let deg;
+  if (rail === 'top' || rail === 'bottom')
+    deg = Math.abs(Math.atan2(Math.abs(dy), Math.abs(dx)) * DEG);
+  else
+    deg = Math.abs(Math.atan2(Math.abs(dx), Math.abs(dy)) * DEG);
+  return deg.toFixed(1);
+}
+
+let bounceRailIdx = 0;  // 0 = 1st rail, 1 = 2nd rail
+
+function buildBouncePills(sol) {
+  const el = $('bounce-pills');
+  if (!el) return;
+  if (!bounceOn) { el.innerHTML = ''; return; }
+  const rails = [];
+  if (sol && sol.contact)  rails.push({label: RAIL_SHORT[sol.contact.rail] + ' (1ST)', idx: 0});
+  if (sol && sol.contact2) rails.push({label: RAIL_SHORT[sol.contact2.rail] + ' (2ND)', idx: 1});
+  if (rails.length < 2) bounceRailIdx = 0;
+  if (rails.length === 0) { el.innerHTML = ''; return; }
+  el.innerHTML = rails.map(r =>
+    `<button class="bpill${bounceRailIdx===r.idx?' active':''}" onclick="bounceRailIdx=${r.idx};render()">${r.label}</button>`
+  ).join('');
+}
+
+function drawBankerBounce(sol) {
+  const svg = $('bounce-svg');
+  buildBouncePills(sol);
+  if (!svg || !bounceOn) return;
+
+  const W=460, H=150, TW=460;
+  svg.setAttribute('viewBox', `0 0 ${TW} ${H}`);
+
+  if (!sol || !sol.contact) {
+    svg.innerHTML = `<rect width="${TW}" height="${H}" fill="rgba(0,0,0,0.35)"/>` +
+      `<text x="${TW/2}" y="${H/2+5}" text-anchor="middle" font-family="Lato,sans-serif" font-size="13" font-weight="700" fill="rgba(255,255,255,0.25)">Aim to see bounce</text>`;
+    return;
+  }
+
+  // Pick which rail to show
+  const useSecond = bounceRailIdx === 1 && sol.contact2;
+  const contact   = useSecond ? sol.contact2 : sol.contact;
+  const rail = contact.rail;
+  const horiz = (rail === 'top' || rail === 'bottom');
+  const cy = H - 16;
+  const cx = TW / 2;
+  const RAY = 115;
+
+  // Incoming direction
+  const prevPt = useSecond ? sol.contact : S.ob;
+  const rawDx = contact.x - prevPt.x, rawDy = contact.y - prevPt.y;
+  const rawLen = Math.hypot(rawDx, rawDy) || 1;
+  const inDx = rawDx/rawLen, inDy = rawDy/rawLen;
+
+  // Rebound direction from _reboundEnd or contact2
+  let rbDx, rbDy;
+  const nextPt = useSecond ? sol._reboundEnd : (sol.contact2 || sol._reboundEnd);
+  if (nextPt) {
+    const rDx = nextPt.x - contact.x, rDy = nextPt.y - contact.y;
+    const rLen = Math.hypot(rDx, rDy) || 1;
+    rbDx = rDx/rLen; rbDy = rDy/rLen;
+  } else {
+    rbDx = horiz ? inDx : -inDx;
+    rbDy = horiz ? -inDy : inDy;
+  }
+
+  // Transform to diagram space
+  let inAlong, inInto, rbAlong, rbInto;
+  if (horiz) {
+    inAlong=inDx; inInto=inDy; rbAlong=rbDx; rbInto=rbDy;
+  } else {
+    const sign = (rail==='right') ? 1 : -1;
+    inAlong=inDy*sign; inInto=inDx; rbAlong=rbDy*sign; rbInto=rbDx;
+  }
+  if (inInto < 0) { inInto=-inInto; inAlong=-inAlong; }
+  if (rbInto > 0) { rbInto=-rbInto; rbAlong=-rbAlong; }
+  if (!horiz)     { inAlong=-inAlong; rbAlong=-rbAlong; }
+
+  const inLen=Math.hypot(inAlong,inInto), rbLen=Math.hypot(rbAlong,rbInto);
+  const inNx=inAlong/inLen, inNy=inInto/inLen;
+  const rbNx=rbAlong/rbLen, rbNy=rbInto/rbLen;
+
+  const ax=cx-inNx*RAY, ay=cy-inNy*RAY;
+  const rx=cx+rbNx*RAY, ry=cy+rbNy*RAY;
+
+  const inDeg  = angleFromRail(inDx, inDy, rail);
+  const outDeg = angleFromRail(rbDx, rbDy, rail);
+  // 2nd rail: IN/OUT labels are reversed due to geometry flip — swap them
+  const labelInDeg  = useSecond ? outDeg : inDeg;
+  const labelOutDeg = useSecond ? inDeg  : outDeg;
+
+  const RAIL_LONG = {top:'TOP RAIL',bottom:'BTM RAIL',left:'LFT RAIL',right:'RGT RAIL'};
+  const inOnRight = ax >= TW/2;
+  const inX = inOnRight ? TW-8 : 8;
+  const outX = inOnRight ? 8 : TW-8;
+  const inAnch  = inOnRight ? 'end' : 'start';
+  const outAnch = inOnRight ? 'start' : 'end';
+
+  // Colors match table diagram paths exactly
+  // ob-path=#7dd3fc, bk-path=#4ade80, bk-path2=#a78bfa
+  const inCol  = useSecond ? '#4ade80' : '#7dd3fc';
+  const outCol = useSecond ? '#a78bfa' : '#4ade80';
+
+  let out = `<rect width="${TW}" height="${H}" fill="rgba(0,0,0,0.35)"/>`;
+  out += `<rect x="0" y="0" width="${TW}" height="${cy}" fill="rgba(26,80,40,0.5)"/>`;
+  out += `<rect x="0" y="${cy}" width="${TW}" height="${H-cy}" fill="#1a6830"/>`;
+  out += `<circle cx="${cx}" cy="${cy+8}" r="10" fill="none" stroke="#ffffff" stroke-width="2.5"/>`;
+  out += `<circle cx="${cx}" cy="${cy+8}" r="3" fill="#ffffff"/>`;
+  out += `<line x1="${ax}" y1="${ay}" x2="${cx}" y2="${cy}" stroke="${inCol}" stroke-width="3" stroke-dasharray="8,4"/>`;
+  out += `<circle cx="${ax}" cy="${ay}" r="7" fill="${inCol}"/>`;
+  out += `<line x1="${cx}" y1="${cy}" x2="${rx}" y2="${ry}" stroke="${outCol}" stroke-width="3" stroke-dasharray="8,4"/>`;
+  out += `<text x="12" y="${cy+12}" text-anchor="start" font-family="Lato,sans-serif" font-size="11" font-weight="900" fill="#ffffff">${RAIL_LONG[rail]}</text>`;
+  out += `<text x="${TW-8}" y="${cy+12}" text-anchor="end" font-family="Lato,sans-serif" font-size="9" font-weight="700" letter-spacing="2" font-style="italic" fill="#c8703a">BOUNCE</text>`;
+  out += `<text x="${inX}" y="18" text-anchor="${inAnch}" font-family="Lato,sans-serif" font-size="10" font-weight="900" letter-spacing="2" fill="${inCol}">IN</text>`;
+  out += `<text x="${inX}" y="40" text-anchor="${inAnch}" font-family="Lato,sans-serif" font-size="22" font-weight="700" fill="#ffffff">${inDeg}°</text>`;
+  out += `<text x="${outX}" y="18" text-anchor="${outAnch}" font-family="Lato,sans-serif" font-size="10" font-weight="900" letter-spacing="2" fill="${outCol}">OUT</text>`;
+  out += `<text x="${outX}" y="40" text-anchor="${outAnch}" font-family="Lato,sans-serif" font-size="22" font-weight="700" fill="#ffffff">${outDeg}°</text>`;
+
+  svg.innerHTML = out;
+}
+
+function nearestPocketLabel(pt) {
+  let best = null, bestD = Infinity;
+  for (const [k, p] of Object.entries(POCKETS)) {
+    const d = Math.hypot(pt.x - p.x, pt.y - p.y);
+    if (d < bestD) { bestD = d; best = p; }
+  }
+  return bestD < 30 ? best.label : 'open table';
+}
+
+function selectPocket(key) {
+  S.target = { x: POCKETS[key].x, y: POCKETS[key].y };
+  S.activeSol = 0;
+  
+  Object.keys(POCKETS).forEach(k => sV('phl-'+k, false));
+  sV('phl-'+key, true);
+  setTimeout(() => sV('phl-'+key, false), 600);
+  render();
+}
+
+function selectSol(i) {
+  S.activeSol = i;
+  render();
+}
+
+const vertLabels = {
+  '-4':'max draw','-3':'heavy draw','-2':'draw','-1':'soft draw',
+  '0':'center','1':'soft follow','2':'follow','3':'heavy follow','4':'max follow'
+};
+
+function onSliders() {
+  S.speed = parseInt($('sl-spd').value) / 100;
+  S.spin  = parseInt($('sl-spn').value);
+  S.vert  = parseInt($('sl-vert').value);
+  const bv = parseInt($('sl-bias').value);
+  S.bias = bv / 50;
+
+  $('sv-spd').textContent  = S.speed < 0.28 ? 'slow' : S.speed < 0.72 ? 'med' : 'fast';
+  $('sv-spn').textContent  = spinLabels[String(S.spin)];
+  $('sv-vert').textContent = vertLabels[String(S.vert)];
+  let bt = 'neutral'; if (bv > 3) bt = 'long+'+bv; if (bv < -3) bt = 'short'+bv;
+  $('sv-bias').textContent = bt;
+  render();
+}
+
+function toggleTable() {
+  S.snooker = !S.snooker;
+  S.tableSize = S.snooker ? 12 : 9;
+  $('size-btn').textContent = S.tableSize + 'ft';
+  const btn = $('table-btn');
+  btn.textContent = S.snooker ? 'SNOOKER' : 'POOL';
+  btn.style.borderColor = S.snooker ? 'rgba(112,192,240,0.5)' : 'rgba(160,208,160,0.4)';
+  btn.style.color = S.snooker ? '#70c0f0' : '#a0d0a0';
+  render();
+}
+
+function cycleTableSize() {
+  const poolSizes    = [7, 8, 9];
+  const snookerSizes = [10, 12];
+  const sizes = S.snooker ? snookerSizes : poolSizes;
+  const idx = sizes.indexOf(S.tableSize);
+  S.tableSize = sizes[(idx + 1) % sizes.length];
+  $('size-btn').textContent = S.tableSize + 'ft';
+  render();
+}
+
+function toggleUnits() {
+  S.metric = !S.metric;
+  $('unit-btn').textContent = S.metric ? 'M' : 'FT';
+  render();
+}
+
+function toggleInfo() {
+  $('info-overlay').classList.toggle('open');
+}
+
+function cycleRotation() {
+  S.rotation = (S.rotation + 90) % 360;
+  const svgEl = $('tbl'), grp = $('tbl-content'), btn = $('rot-btn'), r = S.rotation;
+  if (r === 0) {
+    svgEl.setAttribute('viewBox','0 0 460 260');
+    grp.setAttribute('transform','');
+  } else if (r === 90) {
+    svgEl.setAttribute('viewBox','0 0 260 460');
+    grp.setAttribute('transform','translate(260,0) rotate(90)');
+  } else if (r === 180) {
+    svgEl.setAttribute('viewBox','0 0 460 260');
+    grp.setAttribute('transform','translate(460,260) rotate(180)');
+  } else {
+    svgEl.setAttribute('viewBox','0 0 260 460');
+    grp.setAttribute('transform','translate(0,460) rotate(270)');
+  }
+  btn.textContent = r === 0 ? '⟳ 0°' : `⟳ ${r}°`;
+  
+  render();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CALIBRATION
+// ─────────────────────────────────────────────────────────────────────────────
+let calMode = false;
+let calPhase = 'setup';   // 'setup' | 'tap'
+let calShots = [];        // [{predicted, bias, throwMult}]
+const CAL_MAX = 5;
+
+// Derived calibration constants (applied on top of defaults)
+let calBiasAdj   = 0;     // accumulated bias adjustment
+let calThrowAdj  = 1.0;   // throw multiplier (1.0 = default)
+
+function toggleCal() {
+  calMode = !calMode;
+  const btn = $('cal-btn');
+  
+  if ($('cal-panel')) $('cal-panel').classList.toggle('open', calMode);
+  if (!calMode) {
+    calPhase = 'setup';
+    sV('cal-predicted', false);
+    sV('cal-predicted-lbl', false);
+    sV('cal-actual', false);
+    sV('cal-actual-lbl', false);
+  }
+  calUpdateUI();
+  render();
+}
+
+function calUpdateUI() {
+  const n = calShots.length;
+  for (let i = 0; i < CAL_MAX; i++) {
+    const el = $('csd-' + i);
+    if (el) el.classList.toggle('done', i < n);
+  }
+  if (!calMode) return;
+  const inst    = $('cal-instruction');
+  const stat    = $('cal-status');
+  const shootBtn = $('cal-shoot-btn');
+  const railMode = S.cushions === 1 ? '1-RAIL' : '2-RAIL';
+  if (stat) stat.innerHTML =
+    `Calibrating: <strong style="color:#f0df70">${railMode}</strong> &nbsp;·&nbsp; ` +
+    `${n} of ${CAL_MAX} shots &nbsp;·&nbsp; ` +
+    `<span style="color:#88ee88">${profileStr()}</span>`;
+  if (calPhase === 'setup') {
+    if (inst) inst.textContent = 'Set up a bank shot. Gold circle = predicted end. Tap SHOOT when ready.';
+    if (shootBtn) { shootBtn.textContent = 'SHOOT →'; shootBtn.style.display = ''; }
+  } else {
+    if (inst) inst.textContent = 'Shoot it. Then tap where the ball actually stopped on the table.';
+    if (shootBtn) shootBtn.style.display = 'none';
+  }
+}
+
+function calShoot() {
+  if (!calMode) return;
+  // Record the current predicted endpoint
+  const sols = allSolutions();
+  if (!sols.length) { alert('No valid bank solution — adjust ball positions first.'); return; }
+  const sol = computeDiagShot(sols[S.activeSol] || sols[0]);
+  const pred = sol._reboundEnd;
+  if (!pred) return;
+
+  // Show predicted marker
+  sC('cal-predicted', pred.x, pred.y);
+  $('cal-predicted-lbl').setAttribute('x', pred.x);
+  $('cal-predicted-lbl').setAttribute('y', pred.y - 14);
+  sV('cal-predicted', true);
+  sV('cal-predicted-lbl', true);
+
+  // Store shot state for back-calculation
+  calShots.push({
+    predicted: {x: pred.x, y: pred.y},
+    bias: S.bias,
+    ob: {...S.ob}, cb: {...S.cb},
+    cutDeg: S.diagCutDeg,
+    contact: sol.contact,
+    rail: sol.contact.rail,
+    actual: null,
+  });
+
+  calPhase = 'tap';
+  calUpdateUI();
+}
+
+function calTapActual(p) {
+  if (!calMode || calPhase !== 'tap') return;
+  const shot = calShots[calShots.length - 1];
+  shot.actual = {x: p.x, y: p.y};
+
+  sC('cal-actual', p.x, p.y);
+  $('cal-actual-lbl').setAttribute('x', p.x);
+  $('cal-actual-lbl').setAttribute('y', p.y + 16);
+  sV('cal-actual', true);
+  sV('cal-actual-lbl', true);
+
+  // Error: positive dy = ball came up short, negative = went long
+  const dy = shot.actual.y - shot.predicted.y;
+  const dx = shot.actual.x - shot.predicted.x;
+  const dist = Math.hypot(dx, dy);
+
+  // Each shot contributes an error sample
+  // Map error distance to k adjustment: ~57px per diamond, ~0.06 k per diamond
+  const kAdj = -dy * 0.001;  // negative dy = went long = k too high = reduce it
+  shot.kAdj = kAdj;
+  shot.cushions = S.cushions;
+
+  // Average all 1-cushion shots → tableK1, all 2-cushion → tableK2
+  const shots1 = calShots.filter(s => s.actual && s.cushions === 1);
+  const shots2 = calShots.filter(s => s.actual && s.cushions === 2);
+  if (shots1.length) tableK1 = shots1.reduce((s,sh) => s + sh.kAdj, 0) / shots1.length;
+  if (shots2.length) tableK2 = shots2.reduce((s,sh) => s + sh.kAdj, 0) / shots2.length;
+  tableK1 = Math.max(-0.30, Math.min(0.30, tableK1));
+  tableK2 = Math.max(-0.30, Math.min(0.30, tableK2));
+  saveTableProfile();
+
+  const nDone = calShots.filter(s => s.actual).length;
+  const dirText = dy < -8 ? 'went long' : dy > 8 ? 'came up short' : dx < -8 ? 'went left' : dx > 8 ? 'went right' : 'on target ✓';
+  const res = $('cal-result');
+  res.style.display = 'block';
+
+  const k1pct = Math.round(tableK1 * 100);
+  const k2pct = Math.round(tableK2 * 100);
+  const k1str = (k1pct >= 0 ? '+' : '') + k1pct + '%';
+  const k2str = (k2pct >= 0 ? '+' : '') + k2pct + '%';
+
+  res.innerHTML =
+    `<strong style="color:#f0df70">Shot ${nDone}: ${dirText}</strong><br>` +
+    `TABLE PROFILE:<br>` +
+    `1-cushion: ${k1str} &nbsp;|&nbsp; 2-cushion: ${k2str}<br>` +
+    (nDone < 3 ? `<span style="color:rgba(255,255,255,0.5)">Shoot ${3-nDone} more for a reliable profile</span>`
+               : `<span style="color:#4ade80">✓ Profile locked in — keep shooting to refine</span>`);
+
+  calPhase = 'setup';
+  calUpdateUI();
+  render();
+}
+
+function calUndo() {
+  if (calShots.length === 0) return;
+  calShots.pop();
+  calPhase = 'setup';
+  sV('cal-predicted', false); sV('cal-predicted-lbl', false);
+  sV('cal-actual', false); sV('cal-actual-lbl', false);
+  calUpdateUI();
+}
+
+function calReset() {
+  calShots = [];
+  calPhase = 'setup';
+  tableK1 = 0.00;
+  tableK2 = 0.00;
+  saveTableProfile();
+  sV('cal-predicted', false); sV('cal-predicted-lbl', false);
+  sV('cal-actual', false); sV('cal-actual-lbl', false);
+  const res = $('cal-result');
+  if (res) res.style.display = 'none';
+  calUpdateUI();
+  render();
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────────────────────────────────────
+loadTableProfile();
+render();
+calUpdateUI();
+// Map and ghost are on by default — show map layer immediately
+const _ml = $('map-layer');
+if (_ml) { _ml.style.opacity = '1'; }
+// Start with ghost and map active
+
+</script>
+</body>
+</html>

@@ -98,6 +98,10 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 #cal-result{font-size:11px;color:#88ee88;margin-top:6px;display:none;line-height:1.65;}
 
 footer{text-align:center;font-size:0.58rem;color:rgba(255,255,255,0.15);padding:10px 8px 4px;letter-spacing:1.5px;text-transform:uppercase;margin-top:12px;}
+
+@media (orientation: landscape) {
+  #app, .card { max-width: 100% !important; }
+}
 </style>
 </head>
 <body>
@@ -619,8 +623,8 @@ function rayHit(px, py, dx, dy, excludeRail) {
 // Compressed rebound direction at rail
 function reboundDir(dx, dy, rail, k) {
   let rdx, rdy;
-  if (rail === 'top' || rail === 'bottom') { rdx=dx; rdy=-dy*k; }
-  else { rdx=-dx*k; rdy=dy; }
+  if (rail === 'top' || rail === 'bottom') { rdx=dx*k; rdy=-dy; }
+  else { rdx=-dx; rdy=dy*k; }
   // OB running english from cut (induced by cut angle)
   return {dx:rdx, dy:rdy};
 }
@@ -677,13 +681,18 @@ function computeDiagShot(sol) {
   const obToRailDist = Math.hypot(contact.x - S.ob.x, contact.y - S.ob.y);
   const k = kFactor(1, obToRailDist);
   let rdx = dx, rdy = dy;
-  if (contact.rail === 'top' || contact.rail === 'bottom') { rdy = -dy * k; }
-  else { rdx = -dx * k; }
+  if (contact.rail === 'top' || contact.rail === 'bottom') { rdy = -dy; rdx = dx * k; }
+  else { rdx = -dx; rdy = dy * k; }
 
   // Cut-induced spin on OB at rail
   const inducedSpin = Math.sin(cutRad2) * Math.cos(cutRad2) * 0.08 * side;
-  // Cue-applied sidespin effect
-  const cueSpin = S.spin * 0.018;
+  // Cue-applied sidespin effect — sign depends on rail
+  // Running english (spin matching ball's travel direction along rail) opens the angle
+  // Check sign: for top/bottom rails, dx gives travel direction; for left/right, dy does
+  const railSign = (contact.rail === 'top' || contact.rail === 'bottom')
+    ? (dx > 0 ? 1 : -1)   // top/bottom: running = spin matches horizontal travel
+    : (dy > 0 ? -1 : 1);  // left/right: running = spin matches vertical travel, sign flips
+  const cueSpin = S.spin * 0.018 * railSign * -1;
   const totalSpin = inducedSpin + cueSpin;
 
   const cosS = Math.cos(totalSpin), sinS = Math.sin(totalSpin);
@@ -698,8 +707,8 @@ function computeDiagShot(sol) {
     contact2 = {x: rebound.x, y: rebound.y, rail: rebound.rail};
     const k2 = kFactor(2, Math.hypot(contact2.x - contact.x, contact2.y - contact.y));
     let rdx2 = rdx, rdy2 = rdy;
-    if (contact2.rail === 'top' || contact2.rail === 'bottom') { rdy2 = -rdy2 * k2; }
-    else { rdx2 = -rdx2 * k2; }
+    if (contact2.rail === 'top' || contact2.rail === 'bottom') { rdy2 = -rdy2; rdx2 = rdx2 * k2; }
+    else { rdx2 = -rdx2; rdy2 = rdy2 * k2; }
     const rLen2 = Math.hypot(rdx2, rdy2);
     rdx2 /= rLen2; rdy2 /= rLen2;
     const rebound2 = rayHit(contact2.x, contact2.y, rdx2, rdy2, contact2.rail);

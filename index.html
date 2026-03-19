@@ -553,8 +553,7 @@ footer{text-align:center;font-size:0.58rem;color:rgba(255,255,255,0.15);padding:
 <!-- ── TOGGLES ── -->
 <div style="display:flex;gap:5px;padding:6px 0 4px;">
   <button id="btn-cushion" class="tog" onclick="toggleCushions()" style="background:#f0df70;color:#1a1400;">1 CUSHION</button>
-  <button id="btn-map2" class="tog" onclick="toggleMap2()" style="background:#f0df70;color:#1a1400;">MAP 2</button>
-  <button id="btn-map"     class="tog" onclick="toggleMap()"      style="background:#f0df70;color:#1a1400;">MAP</button>
+  <button id="btn-map" class="tog" onclick="toggleMap()" style="background:#f0df70;color:#1a1400;">MAP</button>
   <button id="btn-ghost"   class="tog" onclick="toggleGhost()"    style="background:#f0df70;color:#1a1400;">GHOST</button>
   <button id="cal-btn"     class="tog" onclick="toggleCal()"      style="background:#f0df70;color:#1a1400;">CAL</button>
   <button id="btn-bounce"  class="tog" onclick="toggleBounce()"   style="background:#f0df70;color:#1a1400;">BOUNCE</button>
@@ -1512,7 +1511,6 @@ function toggleCushions() {
 }
 
 let mapOn = true;
-let map2On = false;
 let ghostOn = true;
 let bounceOn = false;
 
@@ -1524,15 +1522,9 @@ function toggleGhost() {
 }
 function toggleMap() {
   mapOn = !mapOn;
-  
-  const layer = $('map-layer');
-  layer.style.transition = 'opacity 0.2s';
-  layer.style.opacity = mapOn ? '1' : '0';
-}
-function toggleMap2() {
-  map2On = !map2On;
-  const layer = document.getElementById('map2-layer');
-  if (layer) { layer.style.transition='opacity 0.2s'; layer.style.opacity = map2On ? '1' : '0'; }
+  [$('map-layer'), $('map2-layer')].forEach(l => {
+    if (l) { l.style.transition='opacity 0.2s'; l.style.opacity = mapOn ? '1' : '0'; }
+  });
 }
 
 function toggleBounce() {
@@ -1948,6 +1940,8 @@ calUpdateUI();
 // Map and ghost are on by default — show map layer immediately
 const _ml = $('map-layer');
 if (_ml) { _ml.style.opacity = '1'; }
+const _ml2 = $('map2-layer');
+if (_ml2) { _ml2.style.opacity = '1'; }
 // Start with ghost and map active
 
 // ── FLIP DIAGRAM ──────────────────────────────────────────────
@@ -1960,15 +1954,13 @@ function flipDiagram() {
 let panelsSwapped = false;
 function swapPanels() {
   panelsSwapped = !panelsSwapped;
-  const sliders  = document.getElementById('block-sliders');
-  const ball     = document.getElementById('block-ball');
-  const sep      = document.querySelector('.sep') || ball;
-  const readouts = document.getElementById('readouts');
-  const card     = document.querySelector('.card');
+  const container = document.getElementById('swap-container');
+  const sliders   = document.getElementById('block-sliders');
+  const ball      = document.getElementById('block-ball');
   if (panelsSwapped) {
-    document.getElementById('swap-container').insertBefore(sliders, ball);
+    container.insertBefore(sliders, ball);
   } else {
-    card.insertBefore(sliders, readouts);
+    container.insertBefore(ball, sliders);
   }
 }
 

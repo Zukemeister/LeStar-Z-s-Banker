@@ -150,7 +150,7 @@ footer{text-align:center;font-size:0.58rem;color:rgba(255,255,255,0.15);padding:
 
   <!-- BIRD'S EYE TABLE -->
   <div class="svg-box top-box" style="position:relative;">
-    <svg id="tbl" viewBox="0 0 460 260" xmlns="http://www.w3.org/2000/svg">
+    <svg id="tbl" viewBox="0 0 460 260" xmlns="http://www.w3.org/2000/svg" style="touch-action:none;">
     <defs>
       <radialGradient id="gFelt" cx="50%" cy="50%" r="60%">
         <stop offset="0%" stop-color="#1e6b35"/><stop offset="100%" stop-color="#134d25"/>
@@ -557,9 +557,9 @@ footer{text-align:center;font-size:0.58rem;color:rgba(255,255,255,0.15);padding:
   <button id="btn-map"     class="tog" onclick="toggleMap()"      style="background:#f0df70;color:#1a1400;">MAP</button>
   <button id="btn-ghost"   class="tog" onclick="toggleGhost()"    style="background:#f0df70;color:#1a1400;">GHOST</button>
   <button id="cal-btn"     class="tog" onclick="toggleCal()"      style="background:#f0df70;color:#1a1400;">CAL</button>
-  <button id="rot-btn"     class="tog" onclick="cycleRotation()"  style="background:#f0df70;color:#1a1400;">⟳ 0°</button>
   <button id="btn-bounce"  class="tog" onclick="toggleBounce()"   style="background:#f0df70;color:#1a1400;">BOUNCE</button>
   <button class="tog" id="btn-swap" onclick="swapPanels()" style="background:#a0d0a0;color:#001a00;font-size:18px;font-weight:900;padding:0 10px;" title="Swap sliders and ball diagram">⇅</button>
+  <button class="tog" id="btn-flip" onclick="flipDiagram()" style="background:#f0df70;color:#1a1400;" title="Flip diagram left/right">⇄</button>
 </div>
 </div>
 
@@ -898,7 +898,7 @@ function computeDiagShot(sol) {
   const alongSign = (contact.rail === 'top' || contact.rail === 'bottom')
     ? Math.sign(rdx)   // horiz rail: rebound along-rail = rdx
     : Math.sign(rdy);  // vert rail: rebound along-rail = rdy
-  const cueSpin = -S.spin * 0.018 * alongSign;
+  const cueSpin = S.spin * 0.018 * alongSign;
   const totalSpin = inducedSpin + cueSpin;
 
   const cosS = Math.cos(totalSpin), sinS = Math.sin(totalSpin);
@@ -1459,7 +1459,9 @@ svg.addEventListener('pointerdown', e => {
   if (Math.hypot(p.x-ob2.x, p.y-ob2.y) < 36) { drag='ob2'; svg.setPointerCapture(e.pointerId); return; }
 });
 svg.addEventListener('pointermove', e => {
-  if (!drag) return; e.preventDefault();
+  if (!drag) return;
+  e.preventDefault();
+  e.stopPropagation();
   const p = svgPt(e);
   if      (drag==='ob')  { S.ob  = clampBall(p.x, p.y); S.diagCutDeg = null; S._diagDragRh = undefined; }
   else if (drag==='cb')  { S.cb  = clampBall(p.x, p.y); S.diagCutDeg = null; S._diagDragRh = undefined; }
@@ -1947,6 +1949,12 @@ calUpdateUI();
 const _ml = $('map-layer');
 if (_ml) { _ml.style.opacity = '1'; }
 // Start with ghost and map active
+
+// ── FLIP DIAGRAM ──────────────────────────────────────────────
+function flipDiagram() {
+  S._diagDragRh = !(S._diagDragRh === undefined ? false : S._diagDragRh);
+  render();
+}
 
 // ── SWAP PANELS ──────────────────────────────────────────────
 let panelsSwapped = false;

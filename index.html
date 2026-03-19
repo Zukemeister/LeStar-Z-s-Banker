@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=0.1, maximum-scale=5.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Banker">
@@ -14,7 +14,7 @@
 button{-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;}
 svg,.diagram-wrap,.card{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;}
 html,body{background:#141414;font-family:'Lato',sans-serif;display:flex;flex-direction:column;align-items:center;padding:12px 8px 32px;min-height:100vh;}
-.card{background:#1a361a;border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,0.7);width:100%;max-width:700px;padding:14px 12px 16px;border:2px solid #2a4e2a;}
+.card{background:#1a361a;border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,0.7);width:100%;max-width:700px;padding:14px 32px 16px 12px;border:2px solid #2a4e2a;}
 
 /* ── HEADER ── */
 .hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.07);}
@@ -127,7 +127,7 @@ footer{text-align:center;font-size:0.58rem;color:rgba(255,255,255,0.15);padding:
     </marker>
   </defs>
 </svg>
-<div class="card">
+<div id="zoom-wrap" style="width:100%;transform-origin:top left;"><div class="card">
 
 <!-- ── HEADER ── -->
 <div class="hdr">
@@ -394,26 +394,29 @@ footer{text-align:center;font-size:0.58rem;color:rgba(255,255,255,0.15);padding:
 </div>
 
 <div class="sgroup">
-  <div class="sgroup-title">SHOT POWER, SPIN &amp; TABLE</div>
   <div class="srow">
-    <span class="slbl">SPEED</span>
+    <span class="slbl">speed</span>
     <input type="range" id="sl-spd" min="0" max="100" value="50" oninput="onSliders()">
     <span class="sval" id="sv-spd">med</span>
+      <span id="sv-spd-n" style="font-size:11px;font-weight:900;color:rgba(240,223,112,0.5);min-width:14px;text-align:center;">5</span>
   </div>
   <div class="srow" style="margin-top:6px">
-    <span class="slbl">SPIN</span>
+    <span class="slbl">spin</span>
     <input type="range" id="sl-spn" min="-4" max="4" value="0" step="1" oninput="onSliders()">
     <span class="sval" id="sv-spn" style="color:#e870b0">center</span>
+      <span id="sv-spn-n" style="font-size:11px;font-weight:900;color:rgba(232,112,176,0.5);min-width:14px;text-align:center;">0</span>
   </div>
   <div class="srow" style="margin-top:6px">
-    <span class="slbl">VERT</span>
+    <span class="slbl">vert</span>
     <input type="range" id="sl-vert" min="-4" max="4" value="0" step="1" oninput="onSliders()">
     <span class="sval" id="sv-vert" style="color:#7dd3fc">center</span>
+      <span id="sv-vert-n" style="font-size:11px;font-weight:900;color:rgba(125,211,252,0.5);min-width:14px;text-align:center;">0</span>
   </div>
   <div class="srow" style="margin-top:6px">
-    <span class="slbl">BIAS</span>
+    <span class="slbl">bias</span>
     <input type="range" id="sl-bias" min="-50" max="50" value="0" oninput="onSliders()">
     <span class="sval" id="sv-bias">neutral</span>
+      <span id="sv-bias-n" style="font-size:11px;font-weight:900;color:rgba(200,144,240,0.5);min-width:14px;text-align:center;">0</span>
   </div>
 </div>
 
@@ -489,6 +492,7 @@ footer{text-align:center;font-size:0.58rem;color:rgba(255,255,255,0.15);padding:
 </div>
 
 </div><!-- card -->
+</div><!-- /zoom-wrap -->
 <footer>LeStar Z Pool Suite · Zukemeister · zukemeister.github.io</footer>
 
 <script>
@@ -689,10 +693,11 @@ function computeDiagShot(sol) {
   // Cue-applied sidespin effect — sign depends on rail
   // Running english (spin matching ball's travel direction along rail) opens the angle
   // Check sign: for top/bottom rails, dx gives travel direction; for left/right, dy does
-  const railSign = (contact.rail === 'top' || contact.rail === 'bottom')
-    ? (dx > 0 ? 1 : -1)   // top/bottom: running = spin matches horizontal travel
-    : (dy > 0 ? -1 : 1);  // left/right: running = spin matches vertical travel, sign flips
-  const cueSpin = S.spin * 0.018 * railSign * -1;
+  // Running english = spin matching rebound direction along rail = opens angle
+  const alongSign = (contact.rail === 'top' || contact.rail === 'bottom')
+    ? Math.sign(rdx)   // horiz rail: rebound along-rail = rdx
+    : Math.sign(rdy);  // vert rail: rebound along-rail = rdy
+  const cueSpin = -S.spin * 0.018 * alongSign;
   const totalSpin = inducedSpin + cueSpin;
 
   const cosS = Math.cos(totalSpin), sinS = Math.sin(totalSpin);
@@ -1482,6 +1487,14 @@ function onSliders() {
   S.bias = bv / 50;
 
   $('sv-spd').textContent  = S.speed < 0.28 ? 'slow' : S.speed < 0.72 ? 'med' : 'fast';
+  // Intensity 1-10
+  const _sv=parseInt($('sl-spd').value),_sn=Math.abs(parseInt($('sl-spn').value));
+  if($('sv-spd-n'))$('sv-spd-n').textContent=Math.max(1,Math.round(_sv/10));
+  if($('sv-spn-n'))$('sv-spn-n').textContent=_sn===0?'0':Math.max(1,Math.round(_sn/4*10/10));
+  const _vn=Math.abs(parseInt($('sl-vert').value));
+  if($('sv-vert-n'))$('sv-vert-n').textContent=_vn===0?'0':Math.max(1,Math.round(_vn/4*10/10));
+  const _bn=Math.abs(parseInt($('sl-bias').value));
+  if($('sv-bias-n'))$('sv-bias-n').textContent=_bn===0?'0':Math.max(1,Math.round(_bn/50*10));
   $('sv-spn').textContent  = spinLabels[String(S.spin)];
   $('sv-vert').textContent = vertLabels[String(S.vert)];
   let bt = 'neutral'; if (bv > 3) bt = 'long+'+bv; if (bv < -3) bt = 'short'+bv;
@@ -1712,6 +1725,23 @@ const _ml = $('map-layer');
 if (_ml) { _ml.style.opacity = '1'; }
 // Start with ghost and map active
 
+</script>
+<script>
+(function(){
+  let scale=1,initDist=0,initScale=1,active=false;
+  document.addEventListener('touchstart',e=>{
+    if(e.touches.length===2){active=true;
+      initDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+      initScale=scale;e.preventDefault();}
+  },{passive:false});
+  document.addEventListener('touchmove',e=>{
+    if(!active||e.touches.length!==2)return;e.preventDefault();
+    const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+    scale=Math.max(0.1,Math.min(3,initScale*d/initDist));
+    document.getElementById('zoom-wrap').style.transform='scale('+scale+')';
+  },{passive:false});
+  document.addEventListener('touchend',e=>{if(e.touches.length<2)active=false;});
+})();
 </script>
 </body>
 </html>

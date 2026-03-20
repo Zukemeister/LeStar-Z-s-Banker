@@ -2,6 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="LeStar Z Banker">
+  <link rel="apple-touch-icon" href="/icon-apple.png">
+  <link rel="manifest" href="/manifest.json">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=0.1, maximum-scale=5.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -102,7 +107,206 @@ footer{text-align:center;font-size:0.58rem;color:rgba(255,255,255,0.15);padding:
 @media (orientation: landscape) {
   #app, .card { max-width: 100% !important; }
 }
+/* ── EDGE CONTROL PANEL ── */
+#edge-panel-wrap { display: contents; }
+#edge-panel {
+  position: fixed;
+  right: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 4px;
+  background: rgba(255,255,248,0.95);
+  border-radius: 10px 0 0 10px;
+  border: 1px solid rgba(0,0,0,0.15);
+  border-right: none;
+  box-shadow: -2px 0 12px rgba(0,0,0,0.2);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  pointer-events: all;
+  touch-action: manipulation;
+}
+.ep-btn {
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  border: 1.5px solid rgba(0,0,0,0.15);
+  background: rgba(255,255,255,0.9);
+  color: #333;
+  font-family: 'Lato', sans-serif;
+  font-size: 10px; font-weight: 900;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition: background 0.1s;
+}
+.ep-btn:active { background: rgba(220,220,210,0.9); }
+.ep-btn.active { background: #2a5a2a; color: #f0df70; border-color: #2a5a2a; }
+.ep-btn.locked { background: #7a1a1a; color: #ffaaaa; border-color: #7a1a1a; }
+.ep-sep { width: 24px; height: 1px; background: rgba(0,0,0,0.12); margin: 2px 0; }
+.ep-label { font-family: 'Lato', sans-serif; font-size: 7px; font-weight: 900;
+  letter-spacing: 1px; color: rgba(0,0,0,0.35); text-transform: uppercase; }
+.snap-label {
+  position: fixed;
+  pointer-events: none;
+  font-family: 'Lato', sans-serif; font-size: 11px; font-weight: 900;
+  color: #f0df70; background: rgba(0,0,0,0.7);
+  padding: 2px 5px; border-radius: 4px;
+  white-space: nowrap; transition: opacity 0.4s; z-index: 600;
+}
+
+#sl-bias-fat::-webkit-slider-thumb,#sl-bias-med::-webkit-slider-thumb,#sl-bias-thin::-webkit-slider-thumb{background:#c890f0;}
+#sl-bias-fat,#sl-bias-med,#sl-bias-thin{-webkit-appearance:none;height:5px;background:rgba(200,144,240,0.2);border-radius:3px;outline:none;touch-action:none;flex:1;}
 </style>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').then(reg => {
+        reg.addEventListener('updatefound', () => {
+          const w = reg.installing;
+          w.addEventListener('statechange', () => {
+            if (w.state === 'installed' && navigator.serviceWorker.controller) {
+              // New version available — show quiet notice
+              const n = document.createElement('div');
+              n.style.cssText = 'position:fixed;bottom:12px;left:50%;transform:translateX(-50%);background:#1a4a1a;color:#f0df70;font-family:Lato,sans-serif;font-size:12px;font-weight:900;padding:8px 16px;border-radius:20px;z-index:9999;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,0.4);';
+              n.textContent = '↑ Update available — tap to refresh';
+              n.onclick = () => { w.postMessage({type:'SKIP_WAITING'}); location.reload(); };
+              document.body.appendChild(n);
+            }
+          });
+        });
+      });
+    }
+  </script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').then(reg => {
+      reg.addEventListener('updatefound', () => {
+        const newWorker = reg.installing;
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            // New version available — reload silently
+            window.location.reload();
+          }
+        });
+      });
+    });
+  });
+}
+const SHOT_LIBRARY = [
+  { name: 'Cross-table bank',  cb:{x:105,y:205}, ob:{x:255,y:155}, pocket:'TR', desc:'CB at 26, OB at 20 — bottom rail, corner TR' },
+  { name: 'Short-angle bank',  cb:{x:205,y:205}, ob:{x:355,y:155}, pocket:'TL', desc:'CB at 28, OB at 23 — bottom rail, corner TL' },
+  { name: 'Long-angle bank',   cb:{x:55, y:205}, ob:{x:205,y:155}, pocket:'TR', desc:'CB at 25, OB at 20 — long bank to corner TR' },
+  { name: '2-rail corner',     cb:{x:355,y:205}, ob:{x:205,y:155}, pocket:'BR', desc:'CB at 28, OB at 20 — 2-rail to corner BR' },
+  { name: 'Side-pocket bank',  cb:{x:105,y:155}, ob:{x:355,y:155}, pocket:'TM', desc:'CB at 18, OB at 23 — top rail, side pocket' },
+];
+let libraryOpen = false;
+// ── USER SHOT LIBRARY ──────────────────────────────────────────
+let userShots = [];
+
+function loadUserShots() {
+  try { userShots = JSON.parse(localStorage.getItem('lz-banker-shots') || '[]'); } catch(e) { userShots=[]; }
+}
+function saveUserShots() {
+  try { localStorage.setItem('lz-banker-shots', JSON.stringify(userShots)); } catch(e) {}
+}
+
+function saveCurrentShot() {
+  const input = document.getElementById('shot-name-input');
+  const name = (input ? input.value.trim() : '') || ('Shot ' + (userShots.length + 1));
+  // Find active pocket key
+  const pocketKey = Object.keys(POCKETS).find(k => {
+    const p = POCKETS[k];
+    return Math.hypot(p.x - S.target.x, p.y - S.target.y) < 5;
+  }) || 'TL';
+  userShots.push({
+    name,
+    cb: {...S.cb}, ob: {...S.ob},
+    pocket: pocketKey,
+    speed: S.speed, spin: S.spin,
+    ts: Date.now()
+  });
+  saveUserShots();
+  if (input) input.value = '';
+  buildShotList();
+}
+
+function loadUserShot(idx) {
+  const shot = userShots[idx];
+  if (!shot) return;
+  S.ob = {...shot.ob}; S.cb = {...shot.cb};
+  if (shot.pocket && POCKETS[shot.pocket]) selectPocket(shot.pocket);
+  render(); toggleShotLibrary();
+}
+
+function deleteUserShot(idx) {
+  userShots.splice(idx, 1);
+  saveUserShots();
+  buildShotList();
+}
+
+function buildShotList() {
+  const el = document.getElementById('shot-library-list');
+  if (!el) return;
+  // Preset shots first
+  let html = '<div style="font-size:8px;color:rgba(255,255,255,0.3);letter-spacing:1px;margin-bottom:3px;">PRESETS</div>';
+  html += SHOT_LIBRARY.map((s,i) =>
+    '<div data-preset="' + i + '" class="shot-lib-item" style="padding:4px 6px;border-bottom:1px solid rgba(255,255,255,0.06);cursor:pointer;display:flex;justify-content:space-between;align-items:center;">' +
+    '<div><div style="font-size:10px;font-weight:900;color:#f0df70">' + s.name + '</div>' +
+    '<div style="font-size:8px;color:rgba(255,255,255,0.4)">' + s.desc + '</div></div>' +
+    '</div>'
+  ).join('');
+  // User shots
+  if (userShots.length) {
+    html += '<div style="font-size:8px;color:rgba(255,255,255,0.3);letter-spacing:1px;margin:5px 0 3px;">MY SHOTS</div>';
+    html += userShots.map((s,i) => {
+      const d = new Date(s.ts);
+      const dt = (d.getMonth()+1)+'/'+d.getDate();
+      return '<div style="padding:4px 6px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;justify-content:space-between;align-items:center;">' +
+        '<div onclick="loadUserShot('+i+')" style="flex:1;cursor:pointer;">' +
+        '<div style="font-size:10px;font-weight:900;color:#7dd3fc">' + s.name + '</div>' +
+        '<div style="font-size:8px;color:rgba(255,255,255,0.4)">' + dt + ' · ' + s.pocket + '</div></div>' +
+        '<button onclick="deleteUserShot('+i+')" style="font-size:9px;padding:1px 4px;border-radius:3px;border:1px solid rgba(255,80,80,0.4);background:rgba(255,80,80,0.1);color:#ff8080;cursor:pointer;margin-left:4px;">✕</button>' +
+        '</div>';
+    }).join('');
+  }
+  el.innerHTML = html;
+  // Preset click handler
+  el.querySelectorAll('[data-preset]').forEach(item => {
+    item.addEventListener('click', () => {
+      const idx = parseInt(item.dataset.preset);
+      const shot = SHOT_LIBRARY[idx];
+      if (!shot) return;
+      S.ob = {...shot.ob}; S.cb = {...shot.cb};
+      if (shot.pocket && POCKETS[shot.pocket]) selectPocket(shot.pocket);
+      render(); toggleShotLibrary();
+    });
+  });
+}
+
+function toggleShotLibrary() {
+  libraryOpen = !libraryOpen;
+  const panel = document.getElementById('shot-library-panel');
+  if (panel) panel.style.display = libraryOpen ? 'block' : 'none';
+}
+function loadShot(idx) {
+  const shot = SHOT_LIBRARY[idx];
+  if (!shot) return;
+  if (shot.ob) { S.ob = {...shot.ob}; S.cb = {...shot.cb}; }
+  if (shot.pocket && POCKETS[shot.pocket]) {
+    selectPocket(shot.pocket);
+  }
+  render(); toggleShotLibrary();
+}
+
+</script>
 </head>
 <body>
 <!-- Persistent gradients for aiming diagram (Aimer protocol) -->
@@ -557,6 +761,7 @@ footer{text-align:center;font-size:0.58rem;color:rgba(255,255,255,0.15);padding:
   <button id="btn-ghost"   class="tog" onclick="toggleGhost()"    style="background:#f0df70;color:#1a1400;">GHOST</button>
   <button id="cal-btn"     class="tog" onclick="toggleCal()"      style="background:#f0df70;color:#1a1400;">CAL</button>
   <button id="btn-bounce"  class="tog" onclick="toggleBounce()"   style="background:#f0df70;color:#1a1400;">BOUNCE</button>
+  <button class="tog" onclick="toggleShotLibrary()" style="background:#f0df70;color:#1a1400;">SHOTS</button>
   <button class="tog" id="btn-swap" onclick="swapPanels()" style="background:#a0d0a0;color:#001a00;font-size:18px;font-weight:900;padding:0 10px;" title="Swap sliders and ball diagram">⇅</button>
   <button class="tog" id="btn-flip" onclick="flipDiagram()" style="background:#f0df70;color:#1a1400;" title="Flip diagram left/right">⇄</button>
 </div>
@@ -565,20 +770,16 @@ footer{text-align:center;font-size:0.58rem;color:rgba(255,255,255,0.15);padding:
 <!-- ── CALIBRATION PANEL ── -->
 <div id="cal-panel">
   <div id="cal-instruction"></div>
-  <div id="cal-status"></div>
-  <div class="cal-shots">
-    <div class="cal-shot-dot" id="csd-0"></div>
-    <div class="cal-shot-dot" id="csd-1"></div>
-    <div class="cal-shot-dot" id="csd-2"></div>
-    <div class="cal-shot-dot" id="csd-3"></div>
-    <div class="cal-shot-dot" id="csd-4"></div>
+  <div id="cal-status" style="font-size:10px;color:rgba(255,255,255,0.5);margin:3px 0;"></div>
+  <div class="cal-actions" style="display:flex;gap:4px;flex-wrap:wrap;">
+    <button class="cal-action-btn primary" id="cal-rec1-btn" onclick="calRecord1()">① RECORD PREDICTED</button>
+    <button class="cal-action-btn primary" id="cal-rec2-btn" onclick="calRecord2()" style="display:none;background:#1a5a3a;">② RECORD ACTUAL</button>
+    <button class="cal-action-btn" onclick="calUndo()">UNDO</button>
+    <button class="cal-action-btn danger" onclick="calReset()">RESET ALL</button>
+    <button class="cal-action-btn" onclick="toggleCalLibrary()" style="background:#2a3a5a;color:#aaccff;">LIBRARY</button>
   </div>
-  <div class="cal-actions">
-    <button class="cal-action-btn primary" id="cal-shoot-btn" onclick="calShoot()">SHOOT →</button>
-    <button class="cal-action-btn" id="cal-undo-btn" onclick="calUndo()">UNDO</button>
-    <button class="cal-action-btn danger" id="cal-reset-btn" onclick="calReset()">RESET</button>
-  </div>
-  <div id="cal-result"></div>
+  <div id="cal-result" style="margin-top:4px;"></div>
+  <div id="cal-library" style="display:none;margin-top:6px;max-height:120px;overflow-y:auto;font-size:10px;color:rgba(255,255,255,0.6);border-top:1px solid rgba(255,255,255,0.1);padding-top:4px;"></div>
 </div>
 <!-- ── BOUNCE PANEL ── -->
 <div id="swap-container" style="display:flex;flex-direction:column;">
@@ -611,14 +812,36 @@ footer{text-align:center;font-size:0.58rem;color:rgba(255,255,255,0.15);padding:
     <span class="sval" id="sv-vert" style="color:#7dd3fc">center</span>
   </div>
   <div class="srow" style="margin-top:6px">
-    <span class="slbl">bias</span>
-    <input type="range" id="sl-bias" min="-50" max="50" value="0" oninput="onSliders()">
-      <span id="sv-bias-n" style="font-size:11px;font-weight:900;color:rgba(200,144,240,0.5);min-width:14px;text-align:center;">0</span>
-    <span class="sval" id="sv-bias">neutral</span>
+    <span class="slbl" style="color:#c890f0;font-size:9px;">FAT</span>
+    <input type="range" id="sl-bias-fat" min="-12" max="12" value="0" oninput="onSliders()">
+    <span id="sv-bias-fat-n" style="font-size:11px;font-weight:900;color:rgba(200,144,240,0.5);min-width:14px;text-align:center;">0</span>
+    <span class="sval" id="sv-bias-fat" style="color:#c890f0;">0</span>
+  </div>
+  <div class="srow" style="margin-top:4px">
+    <span class="slbl" style="color:#c890f0;font-size:9px;">MED</span>
+    <input type="range" id="sl-bias-med" min="-12" max="12" value="0" oninput="onSliders()">
+    <span id="sv-bias-med-n" style="font-size:11px;font-weight:900;color:rgba(200,144,240,0.5);min-width:14px;text-align:center;">0</span>
+    <span class="sval" id="sv-bias-med" style="color:#c890f0;">0</span>
+  </div>
+  <div class="srow" style="margin-top:4px">
+    <span class="slbl" style="color:#c890f0;font-size:9px;">THIN</span>
+    <input type="range" id="sl-bias-thin" min="-12" max="12" value="0" oninput="onSliders()">
+    <span id="sv-bias-thin-n" style="font-size:11px;font-weight:900;color:rgba(200,144,240,0.5);min-width:14px;text-align:center;">0</span>
+    <span class="sval" id="sv-bias-thin" style="color:#c890f0;">0</span>
   </div>
 </div>
 </div><!-- /block-sliders -->
 </div><!-- /swap-container -->
+
+  <!-- SHOT LIBRARY PANEL -->
+  <div id="shot-library-panel" style="display:none;background:rgba(0,0,0,0.3);border:1px solid rgba(240,223,112,0.3);border-radius:6px;padding:8px;margin-bottom:6px;">
+    <div style="font-size:9px;font-weight:900;letter-spacing:1px;color:rgba(240,223,112,0.7);margin-bottom:5px;">SHOT LIBRARY</div>
+    <div style="display:flex;gap:4px;margin-bottom:6px;">
+      <input id="shot-name-input" type="text" placeholder="Shot name…" style="flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:4px;padding:4px 6px;color:#fff;font-family:'Lato',sans-serif;font-size:11px;outline:none;" maxlength="30">
+      <button onclick="saveCurrentShot()" style="padding:4px 8px;border-radius:4px;border:none;background:#4ade80;color:#001a00;font-family:'Lato',sans-serif;font-size:10px;font-weight:900;cursor:pointer;">SAVE</button>
+    </div>
+    <div id="shot-library-list"></div>
+  </div>
 
 <!-- ── READOUTS ── -->
 <div id="readouts">
@@ -1008,6 +1231,9 @@ function buildSol1(contact) {
     const dot  = Math.max(-1, Math.min(1, cbToObUnit.x*depUnit.x + cbToObUnit.y*depUnit.y));
     Z_des  = Math.acos(dot);
     cutDeg = Z_des * DEG;
+    // Bell curve — mid-range shots 20% sharper, tapers at 0° and 90°
+    cutDeg = Math.min(90, cutDeg * (1 + 0.20 * Math.sin(cutDeg * Math.PI / 90)));
+    Z_des  = cutDeg * RAD;
     const cutRaw   = Math.sin(Z_des);
     const speedLvl = Math.max(1, Math.min(5, Math.floor(S.speed * 5) + 1));
     const sf       = speedFactors[speedLvl];
@@ -1446,6 +1672,7 @@ function clampTable(x,y){return{x:Math.max(TL.left,Math.min(TL.right,x)),y:Math.
 
 svg.addEventListener('pointerdown', e => {
   e.preventDefault();
+  if(lockTable)return;
   const p = svgPt(e);
   // Calibration tap mode — any tap on table records actual endpoint
   if (calMode && calPhase === 'tap') {
@@ -1462,9 +1689,15 @@ svg.addEventListener('pointermove', e => {
   e.preventDefault();
   e.stopPropagation();
   const p = svgPt(e);
-  if      (drag==='ob')  { S.ob  = clampBall(p.x, p.y); S.diagCutDeg = null; S._diagDragRh = undefined; }
-  else if (drag==='cb')  { S.cb  = clampBall(p.x, p.y); S.diagCutDeg = null; S._diagDragRh = undefined; }
-  else if (drag==='ob2') { S.ob2 = clampBall(p.x, p.y); }
+  if (drag==='ob') {
+    const c=clampBall(p.x,p.y), sn=applySnap(c.x,c.y);
+    S.ob={x:sn.x,y:sn.y}; S.diagCutDeg=null; S._diagDragRh=undefined;
+    if(sn.label)showSnapLabel($('tbl'),sn.x,sn.y,sn.label,'ob');
+  } else if (drag==='cb') {
+    const c=clampBall(p.x,p.y), sn=applySnap(c.x,c.y);
+    S.cb={x:sn.x,y:sn.y}; S.diagCutDeg=null; S._diagDragRh=undefined;
+    if(sn.label)showSnapLabel($('tbl'),sn.x,sn.y,sn.label,'cb');
+  } else if (drag==='ob2') { S.ob2=clampBall(p.x,p.y); }
   render();
 });
 svg.addEventListener('pointerup',    () => { drag=null; });
@@ -1511,6 +1744,12 @@ function toggleCushions() {
 }
 
 let mapOn = true;
+let snapOn = true;
+let snapLabelTimer = null;
+let SNAP_POINTS = [];
+const SNAP_RADIUS = 14;
+let lockTable = false;
+let lockSliders = false;
 let ghostOn = true;
 let bounceOn = false;
 
@@ -1700,8 +1939,19 @@ function onSliders() {
   S.speed = parseInt($('sl-spd').value) / 100;
   S.spin  = parseInt($('sl-spn').value);
   S.vert  = parseInt($('sl-vert').value);
-  const bv = parseInt($('sl-bias').value);
-  S.bias = bv / 50;
+  // Three-zone bias
+  const cutDeg = S.diagCutDeg !== null ? S.diagCutDeg : 0;
+  const bFat  = parseInt($('sl-bias-fat')?.value  || '0') * 0.012;
+  const bMed  = parseInt($('sl-bias-med')?.value  || '0') * 0.012;
+  const bThin = parseInt($('sl-bias-thin')?.value || '0') * 0.012;
+  if (cutDeg < 30)      S.bias = bFat + (bMed  - bFat)  * (cutDeg / 30);
+  else if (cutDeg < 60) S.bias = bMed + (bThin - bMed)  * ((cutDeg-30) / 30);
+  else                  S.bias = bThin;
+  ['fat','med','thin'].forEach(z => {
+    const v = parseInt($('sl-bias-'+z)?.value || '0');
+    const el=$('sv-bias-'+z); if(el) el.textContent=(v===0?'0':(v>0?'+':'')+v);
+    const en=$('sv-bias-'+z+'-n'); if(en) en.textContent=Math.abs(v)===0?'0':Math.max(1,Math.round(Math.abs(v)/12*10));
+  });
 
   $('sv-spd').textContent  = S.speed < 0.28 ? 'slow' : S.speed < 0.72 ? 'med' : 'fast';
   // Intensity 1-10
@@ -1775,7 +2025,7 @@ function cycleRotation() {
 // CALIBRATION
 // ─────────────────────────────────────────────────────────────────────────────
 let calMode = false;
-let calPhase = 'setup';   // 'setup' | 'tap'
+let calPhase = 'idle';   // 'setup' | 'tap'
 let calShots = [];        // [{predicted, bias, throwMult}]
 const CAL_MAX = 5;
 
@@ -1786,150 +2036,127 @@ let calThrowAdj  = 1.0;   // throw multiplier (1.0 = default)
 function toggleCal() {
   calMode = !calMode;
   const btn = $('cal-btn');
-  
   if ($('cal-panel')) $('cal-panel').classList.toggle('open', calMode);
   if (!calMode) {
-    calPhase = 'setup';
-    sV('cal-predicted', false);
-    sV('cal-predicted-lbl', false);
-    sV('cal-actual', false);
-    sV('cal-actual-lbl', false);
+    calPhase = 'idle'; calPendingShot = null;
+    sV('cal-predicted', false); sV('cal-predicted-lbl', false);
+    sV('cal-actual',    false); sV('cal-actual-lbl',    false);
   }
-  calUpdateUI();
-  render();
+  calUpdateUI(); render();
 }
 
 function calUpdateUI() {
-  const n = calShots.length;
-  for (let i = 0; i < CAL_MAX; i++) {
-    const el = $('csd-' + i);
-    if (el) el.classList.toggle('done', i < n);
-  }
+  const n = calShots.filter(s => s.actual).length;
+  const stat = $('cal-status');
+  const inst = $('cal-instruction');
+  const b1   = $('cal-rec1-btn');
+  const b2   = $('cal-rec2-btn');
+  if (stat) stat.textContent = n + ' shots stored';
   if (!calMode) return;
-  const inst    = $('cal-instruction');
-  const stat    = $('cal-status');
-  const shootBtn = $('cal-shoot-btn');
-  const railMode = S.cushions === 1 ? '1-RAIL' : '2-RAIL';
-  if (stat) stat.innerHTML =
-    `Calibrating: <strong style="color:#f0df70">${railMode}</strong> &nbsp;·&nbsp; ` +
-    `${n} of ${CAL_MAX} shots &nbsp;·&nbsp; ` +
-    `<span style="color:#88ee88">${profileStr()}</span>`;
-  if (calPhase === 'setup') {
-    if (inst) inst.textContent = 'Set up a bank shot. Gold circle = predicted end. Tap SHOOT when ready.';
-    if (shootBtn) { shootBtn.textContent = 'SHOOT →'; shootBtn.style.display = ''; }
+  if (calPhase === 'idle') {
+    if (inst) inst.textContent = 'Set up your bank shot. Tap ① to record what the app predicts.';
+    if (b1) b1.style.display = '';
+    if (b2) b2.style.display = 'none';
   } else {
-    if (inst) inst.textContent = 'Shoot it. Then tap where the ball actually stopped on the table.';
-    if (shootBtn) shootBtn.style.display = 'none';
+    if (inst) inst.textContent = 'Shoot until it goes. Dial OB/sliders to match reality. Tap ②.';
+    if (b1) b1.style.display = 'none';
+    if (b2) b2.style.display = '';
   }
+  updateCalLibrary();
 }
 
-function calShoot() {
+function calRecord1() {
   if (!calMode) return;
-  // Record the current predicted endpoint
   const sols = allSolutions();
-  if (!sols.length) { alert('No valid bank solution — adjust ball positions first.'); return; }
-  const sol = computeDiagShot(sols[S.activeSol] || sols[0]);
+  if (!sols.length) { alert('No valid bank solution.'); return; }
+  const sol  = computeDiagShot(sols[S.activeSol] || sols[0]);
   const pred = sol._reboundEnd;
   if (!pred) return;
-
-  // Show predicted marker
   sC('cal-predicted', pred.x, pred.y);
   $('cal-predicted-lbl').setAttribute('x', pred.x);
   $('cal-predicted-lbl').setAttribute('y', pred.y - 14);
-  sV('cal-predicted', true);
-  sV('cal-predicted-lbl', true);
-
-  // Store shot state for back-calculation
-  calShots.push({
-    predicted: {x: pred.x, y: pred.y},
-    bias: S.bias,
+  sV('cal-predicted', true); sV('cal-predicted-lbl', true);
+  sV('cal-actual',   false); sV('cal-actual-lbl',   false);
+  calPendingShot = {
+    ts: Date.now(),
+    predictedPos: {x: pred.x, y: pred.y},
     ob: {...S.ob}, cb: {...S.cb},
-    cutDeg: S.diagCutDeg,
-    contact: sol.contact,
-    rail: sol.contact.rail,
-    actual: null,
-  });
-
-  calPhase = 'tap';
+    cushions: S.cushions,
+    speed: S.speed, spin: S.spin,
+    actual: null
+  };
+  calPhase = 'predicted';
   calUpdateUI();
 }
 
-function calTapActual(p) {
-  if (!calMode || calPhase !== 'tap') return;
-  const shot = calShots[calShots.length - 1];
-  shot.actual = {x: p.x, y: p.y};
-
-  sC('cal-actual', p.x, p.y);
-  $('cal-actual-lbl').setAttribute('x', p.x);
-  $('cal-actual-lbl').setAttribute('y', p.y + 16);
-  sV('cal-actual', true);
-  sV('cal-actual-lbl', true);
-
-  // Error: positive dy = ball came up short, negative = went long
-  const dy = shot.actual.y - shot.predicted.y;
-  const dx = shot.actual.x - shot.predicted.x;
-  const dist = Math.hypot(dx, dy);
-
-  // Each shot contributes an error sample
-  // Map error distance to k adjustment: ~57px per diamond, ~0.06 k per diamond
-  const kAdj = -dy * 0.001;  // negative dy = went long = k too high = reduce it
-  shot.kAdj = kAdj;
-  shot.cushions = S.cushions;
-
-  // Average all 1-cushion shots → tableK1, all 2-cushion → tableK2
+function calRecord2() {
+  if (!calMode || !calPendingShot || calPhase !== 'predicted') return;
+  const sols = allSolutions();
+  const sol  = sols.length ? computeDiagShot(sols[S.activeSol] || sols[0]) : null;
+  const actual = sol && sol._reboundEnd ? sol._reboundEnd : calPendingShot.predictedPos;
+  calPendingShot.actual    = actual;
+  calPendingShot.actualPos = actual;
+  const dy = actual.y - calPendingShot.predictedPos.y;
+  const dx = actual.x - calPendingShot.predictedPos.x;
+  calPendingShot.kAdj = -dy * 0.001;
+  calShots.push(calPendingShot);
+  // Recompute k values
   const shots1 = calShots.filter(s => s.actual && s.cushions === 1);
   const shots2 = calShots.filter(s => s.actual && s.cushions === 2);
-  if (shots1.length) tableK1 = shots1.reduce((s,sh) => s + sh.kAdj, 0) / shots1.length;
-  if (shots2.length) tableK2 = shots2.reduce((s,sh) => s + sh.kAdj, 0) / shots2.length;
-  tableK1 = Math.max(-0.30, Math.min(0.30, tableK1));
-  tableK2 = Math.max(-0.30, Math.min(0.30, tableK2));
+  if (shots1.length) tableK1 = Math.max(-0.3, Math.min(0.3, shots1.reduce((s,sh)=>s+sh.kAdj,0)/shots1.length));
+  if (shots2.length) tableK2 = Math.max(-0.3, Math.min(0.3, shots2.reduce((s,sh)=>s+sh.kAdj,0)/shots2.length));
   saveTableProfile();
-
-  const nDone = calShots.filter(s => s.actual).length;
-  const dirText = dy < -8 ? 'went long' : dy > 8 ? 'came up short' : dx < -8 ? 'went left' : dx > 8 ? 'went right' : 'on target ✓';
+  sC('cal-actual', actual.x, actual.y);
+  $('cal-actual-lbl').setAttribute('x', actual.x);
+  $('cal-actual-lbl').setAttribute('y', actual.y + 16);
+  sV('cal-actual', true); sV('cal-actual-lbl', true);
+  const dirText = dy < -8 ? 'went long' : dy > 8 ? 'came up short' : Math.abs(dx) < 8 ? 'on target ✓' : dx < 0 ? 'went left' : 'went right';
   const res = $('cal-result');
-  res.style.display = 'block';
-
-  const k1pct = Math.round(tableK1 * 100);
-  const k2pct = Math.round(tableK2 * 100);
-  const k1str = (k1pct >= 0 ? '+' : '') + k1pct + '%';
-  const k2str = (k2pct >= 0 ? '+' : '') + k2pct + '%';
-
-  res.innerHTML =
-    `<strong style="color:#f0df70">Shot ${nDone}: ${dirText}</strong><br>` +
-    `TABLE PROFILE:<br>` +
-    `1-cushion: ${k1str} &nbsp;|&nbsp; 2-cushion: ${k2str}<br>` +
-    (nDone < 3 ? `<span style="color:rgba(255,255,255,0.5)">Shoot ${3-nDone} more for a reliable profile</span>`
-               : `<span style="color:#4ade80">✓ Profile locked in — keep shooting to refine</span>`);
-
-  calPhase = 'setup';
-  calUpdateUI();
-  render();
+  if (res) {
+    const k1 = (tableK1*100>=0?'+':'')+Math.round(tableK1*100)+'%';
+    const k2 = (tableK2*100>=0?'+':'')+Math.round(tableK2*100)+'%';
+    res.style.display='block';
+    res.innerHTML='<strong style="color:#f0df70">Shot '+calShots.filter(s=>s.actual).length+': '+dirText+'</strong><br>1-rail: '+k1+' · 2-rail: '+k2;
+  }
+  calPendingShot = null; calPhase = 'idle';
+  calUpdateUI(); render();
 }
+
+function toggleCalLibrary() {
+  calLibraryOpen = !calLibraryOpen;
+  const lib = $('cal-library');
+  if (lib) lib.style.display = calLibraryOpen ? 'block' : 'none';
+  updateCalLibrary();
+}
+
+function updateCalLibrary() {
+  const lib = $('cal-library');
+  if (!lib || !calLibraryOpen) return;
+  if (!calShots.length) { lib.innerHTML = '<em>No shots recorded yet.</em>'; return; }
+  lib.innerHTML = calShots.filter(s=>s.actual).slice().reverse().map((s,i) => {
+    const d = new Date(s.ts);
+    const t = (d.getMonth()+1)+'/'+d.getDate()+' '+d.getHours()+':'+String(d.getMinutes()).padStart(2,'0');
+    const dy = s.actual ? s.actual.y - s.predictedPos.y : 0;
+    const dir = dy < -8 ? 'long' : dy > 8 ? 'short' : '✓';
+    return '<div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid rgba(255,255,255,0.06)">'+
+      '<span>'+t+' · '+s.cushions+'R</span>'+
+      '<span style="color:#f0df70">'+dir+'</span>'+
+      '</div>';
+  }).join('');
+}
+
+function calTapActual(p) { return false; }
 
 function calUndo() {
-  if (calShots.length === 0) return;
-  calShots.pop();
-  calPhase = 'setup';
-  sV('cal-predicted', false); sV('cal-predicted-lbl', false);
-  sV('cal-actual', false); sV('cal-actual-lbl', false);
+  if (calPhase === 'predicted') {
+    calPhase = 'idle'; calPendingShot = null;
+    sV('cal-predicted', false); sV('cal-predicted-lbl', false);
+  } else if (calShots.length) {
+    calShots.pop();
+    saveTableProfile();
+  }
   calUpdateUI();
 }
-
-function calReset() {
-  calShots = [];
-  calPhase = 'setup';
-  tableK1 = 0.00;
-  tableK2 = 0.00;
-  saveTableProfile();
-  sV('cal-predicted', false); sV('cal-predicted-lbl', false);
-  sV('cal-actual', false); sV('cal-actual-lbl', false);
-  const res = $('cal-result');
-  if (res) res.style.display = 'none';
-  calUpdateUI();
-  render();
-}
-
 
 // ─────────────────────────────────────────────────────────────────────────────
 // INIT
@@ -1940,6 +2167,10 @@ calUpdateUI();
 // Map and ghost are on by default — show map layer immediately
 const _ml = $('map-layer');
 if (_ml) { _ml.style.opacity = '1'; }
+SNAP_POINTS = buildSnapPoints();
+
+loadUserShots();
+buildShotList();
 const _ml2 = $('map2-layer');
 if (_ml2) { _ml2.style.opacity = '1'; }
 // Start with ghost and map active
@@ -1964,6 +2195,108 @@ function swapPanels() {
   }
 }
 
+// ── GLOBAL TOUCH SAFETY RESET (iOS pointer capture bug) ──────
+document.addEventListener('touchend', () => {
+  drag = null;
+  if (typeof diagDrag !== 'undefined') diagDrag = false;
+  if (typeof overlayDrag !== 'undefined') overlayDrag = null;
+}, {passive: true});
+document.addEventListener('touchcancel', () => {
+  drag = null;
+  if (typeof diagDrag !== 'undefined') diagDrag = false;
+  if (typeof overlayDrag !== 'undefined') overlayDrag = null;
+}, {passive: true});
+
+// ── SNAP SYSTEM ──────────────────────────────────────────────
+function buildSnapPoints() {
+  const pts = [], seen = new Set();
+  const DX=50, DY=50, OX=30, OY=30;
+  function add(x,y,label){
+    const k=x+','+y; if(seen.has(k))return; seen.add(k); pts.push({x,y,label});
+  }
+  for(let row=0;row<4;row++){
+    for(let col=0;col<8;col++){
+      const n=row*8+col+1, x0=OX+col*DX, y0=OY+row*DY, cx=x0+DX/2, cy=y0+DY/2;
+      add(cx,cy,String(n));
+      add(x0,   y0+DY, n+'a'); add(x0,   cy,    n+'b');
+      add(x0,   y0,    n+'c'); add(cx,   y0,    n+'d');
+      add(x0+DX,y0,    n+'e'); add(x0+DX,cy,    n+'f');
+      add(x0+DX,y0+DY, n+'g'); add(cx,   y0+DY, n+'h');
+    }
+  }
+  return pts;
+}
+function nearestSnap(x,y){
+  let best=null,bestD=Infinity;
+  for(const pt of SNAP_POINTS){const d=Math.hypot(x-pt.x,y-pt.y);if(d<SNAP_RADIUS&&d<bestD){best=pt;bestD=d;}}
+  return best;
+}
+function applySnap(x,y){
+  if(!snapOn||!SNAP_POINTS.length)return{x,y,label:null};
+  const pt=nearestSnap(x,y);
+  return pt?{x:pt.x,y:pt.y,label:pt.label}:{x,y,label:null};
+}
+function showSnapLabel(svgEl,x,y,label,ballId){
+  const old=document.getElementById('snap-lbl-'+ballId);
+  if(old)old.remove(); if(!label)return;
+  const rect=svgEl.getBoundingClientRect(),vb=svgEl.viewBox.baseVal;
+  const scx=rect.left+(x/vb.width)*rect.width, scy=rect.top+(y/vb.height)*rect.height;
+  const lbl=document.createElement('div');
+  lbl.id='snap-lbl-'+ballId; lbl.className='snap-label';
+  lbl.textContent=(ballId==='cb'?'CB: ':'OB: ')+label;
+  lbl.style.left=(scx+12)+'px'; lbl.style.top=(scy-10)+'px'; lbl.style.opacity='1';
+  document.body.appendChild(lbl);
+  if(snapLabelTimer)clearTimeout(snapLabelTimer);
+  snapLabelTimer=setTimeout(()=>{lbl.style.opacity='0';setTimeout(()=>lbl.remove(),400);},2000);
+}
+function toggleSnap(){
+  snapOn=!snapOn;
+  const btn=document.getElementById('ep-snap');
+  if(btn){btn.classList.toggle('active',snapOn);btn.blur();}
+  document.activeElement&&document.activeElement.blur();
+}
+
+// ── LOCK SYSTEM ──────────────────────────────────────────────
+function toggleLock(which){
+  if(which==='table')   lockTable  =!lockTable;
+  if(which==='sliders') lockSliders=!lockSliders;
+  const lt=document.getElementById('ep-lt'), ls=document.getElementById('ep-ls');
+  if(lt)lt.classList.toggle('locked',lockTable);
+  if(ls)ls.classList.toggle('locked',lockSliders);
+  const topsvgEl=document.getElementById('tbl');
+  if(topsvgEl)topsvgEl.style.touchAction=lockTable?'auto':'none';
+  const sg=document.querySelector('.sgroup');
+  if(sg)sg.style.opacity=lockSliders?'0.4':'1';
+  document.querySelectorAll('.sgroup input[type=range]').forEach(el=>{el.disabled=lockSliders;});
+  document.activeElement&&document.activeElement.blur();
+}
+
+// ── ZERO BUTTONS ──────────────────────────────────────────────
+function zeroBall(){
+  S.diagCutDeg=null; S._diagDragRh=undefined;
+  render();
+  document.activeElement&&document.activeElement.blur();
+}
+function zeroSliders(){
+  if(lockSliders)return;
+  S.speed=0.5; S.spin=0; S.vert=0; S.bias=0;
+  $('sl-spd').value='50'; $('sl-spn').value='0';
+  $('sl-vert').value='0'; ['fat','med','thin'].forEach(z=>{const sl=$('sl-bias-'+z);if(sl)sl.value='0';});
+  onSliders();
+  document.activeElement&&document.activeElement.blur();
+}
+
+// ── EDGE ZOOM ──────────────────────────────────────────────
+function edgeZoom(factor){
+  const w=document.getElementById('zoom-wrap'); if(!w)return;
+  const cur=w._zscale||1, next=Math.max(0.1,Math.min(3,cur*factor));
+  w._zscale=next; w.style.transform='scale('+next+')'; w.style.transformOrigin='top left';
+}
+function edgeZoomReset(){
+  const w=document.getElementById('zoom-wrap'); if(!w)return;
+  w._zscale=1; w.style.transform='scale(1)';
+}
+
 </script>
 <script>
 (function(){
@@ -1982,5 +2315,24 @@ function swapPanels() {
   document.addEventListener('touchend',e=>{if(e.touches.length<2)active=false;});
 })();
 </script>
+<!-- ── EDGE CONTROL PANEL ── -->
+<div id="edge-panel-wrap">
+<div id="edge-panel">
+  <div class="ep-label">zoom</div>
+  <button class="ep-btn" tabindex="-1" onclick="edgeZoom(1.3)">＋</button>
+  <button class="ep-btn" tabindex="-1" onclick="edgeZoom(1/1.3)">－</button>
+  <button class="ep-btn" tabindex="-1" onclick="edgeZoomReset()">⟳</button>
+  <div class="ep-sep"></div>
+  <div class="ep-label">snap</div>
+  <button class="ep-btn active" id="ep-snap" tabindex="-1" onclick="toggleSnap()">✦</button>
+  <div class="ep-sep"></div>
+  <div class="ep-label">lock</div>
+  <button class="ep-btn" id="ep-lt" tabindex="-1" onclick="toggleLock('table')">T</button>
+  <button class="ep-btn" id="ep-ls" tabindex="-1" onclick="toggleLock('sliders')">S</button>
+  <div class="ep-sep"></div>
+  <div class="ep-label">zero</div>
+  <button class="ep-btn" tabindex="-1" onclick="zeroSliders()">0S</button>
+</div>
+</div><!-- /edge-panel-wrap -->
 </body>
 </html>

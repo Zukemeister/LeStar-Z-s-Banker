@@ -19,7 +19,9 @@
 button{-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;}
 svg,.diagram-wrap,.card{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;}
 html,body{background:#141414;font-family:'Lato',sans-serif;display:flex;flex-direction:column;align-items:center;padding:12px 8px 32px;min-height:100vh;}
-.card{background:#1a361a;border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,0.7);width:100%;max-width:700px;padding:14px 12px 16px 12px;padding-right:70px;border:2px solid #2a4e2a;}
+.outer-wrap{display:flex;flex-direction:row;align-items:flex-start;width:100%;max-width:762px;background:#1a361a;border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,0.7);border:2px solid #2a4e2a;overflow:hidden;}
+.card{flex:1;min-width:0;padding:14px 12px 16px 12px;}
+.toolbar-col{width:62px;flex-shrink:0;align-self:stretch;display:flex;align-items:center;justify-content:center;border-left:1px solid rgba(0,0,0,0.15);position:relative;z-index:10;background:#1a361a;}
 
 
 /* ── HEADER ── */
@@ -106,36 +108,25 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 footer{text-align:center;font-size:0.58rem;color:rgba(255,255,255,0.15);padding:10px 8px 4px;letter-spacing:1.5px;text-transform:uppercase;margin-top:12px;}
 
 @media (orientation: landscape) {
-  #app, .card { max-width: 100% !important; }
+  .outer-wrap { max-width: 100% !important; }
+  .card { max-width: 100% !important; }
 }
 /* ── EDGE CONTROL PANEL ── */
 #edge-panel-wrap { display: contents; }
 #edge-panel {
-  position: fixed;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 500;
   display: flex;
   flex-direction: column;
   align-items: stretch;
   padding: 4px 0;
-  background: rgba(252,252,248,0.97);
-  border-radius: 10px 0 0 10px;
-  border: 1px solid rgba(0,0,0,0.18);
-  border-right: none;
-  box-shadow: -3px 0 14px rgba(0,0,0,0.22);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  width: 62px;
   pointer-events: all;
   touch-action: manipulation;
-  width: 62px;
 }
 .ep-section {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  padding: 4px 5px;
+  padding: 5px 5px 4px;
 }
 .ep-section-label {
   font-family: 'Lato', sans-serif;
@@ -153,11 +144,11 @@ footer{text-align:center;font-size:0.58rem;color:rgba(255,255,255,0.15);padding:
 }
 .ep-btn {
   flex: 1;
-  height: 28px;
+  height: 30px;
   border-radius: 4px;
-  border: 1px solid rgba(0,0,0,0.15);
-  background: rgba(240,240,235,0.95);
-  color: #222;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.12);
+  color: #e8e8e0;
   font-family: 'Lato', sans-serif;
   font-size: 9px;
   font-weight: 900;
@@ -171,18 +162,18 @@ footer{text-align:center;font-size:0.58rem;color:rgba(255,255,255,0.15);padding:
   touch-action: manipulation;
   transition: background 0.1s;
 }
-.ep-btn:active { background: rgba(200,200,192,0.9); }
-.ep-btn.on     { background: #1a4a1a; color: #f0df70; border-color: #1a4a1a; }
-.ep-btn.locked { background: #6a1010; color: #ffbbbb; border-color: #6a1010; }
-.ep-divider { height: 1px; background: #000; opacity: 0.2; margin: 2px 0; }
-.ep-section.zoom   { background: rgba(40,80,160,0.06); }
-.ep-section.snap   { background: rgba(30,100,30,0.08); }
-.ep-section.lock   { background: rgba(140,20,20,0.06); }
-.ep-section.zero   { background: rgba(160,90,10,0.06); }
-.ep-section.zoom   .ep-section-label { color: #1a3a7a; }
-.ep-section.snap   .ep-section-label { color: #1a4a1a; }
-.ep-section.lock   .ep-section-label { color: #7a1010; }
-.ep-section.zero   .ep-section-label { color: #7a4a00; }
+.ep-btn:active { background: rgba(255,255,255,0.25); }
+.ep-btn.on     { background: #f0df70; color: #1a1400; border-color: #f0df70; }
+.ep-btn.locked { background: #ff6060; color: #1a0000; border-color: #ff6060; }
+.ep-divider { height: 1px; background: rgba(255,255,255,0.15); margin: 1px 0; }
+.ep-section.zoom   { background: rgba(100,140,255,0.18); }
+.ep-section.snap   { background: rgba(60,200,60,0.18); }
+.ep-section.lock   { background: rgba(220,60,60,0.18); }
+.ep-section.zero   { background: rgba(220,140,0,0.18); }
+.ep-section.zoom   .ep-section-label { color: #a0c0ff; }
+.ep-section.snap   .ep-section-label { color: #80e880; }
+.ep-section.lock   .ep-section-label { color: #ff9090; }
+.ep-section.zero   .ep-section-label { color: #ffc060; }
 .snap-label {
   position: fixed;
   pointer-events: none;
@@ -382,7 +373,8 @@ function loadShot(idx) {
     </marker>
   </defs>
 </svg>
-<div id="zoom-wrap" style="width:100%;transform-origin:top left;"><div class="card">
+<div class="outer-wrap">
+<div id="zoom-wrap" style="flex:1;min-width:0;transform-origin:top left;"><div class="card">
 
 <!-- ── HEADER ── -->
 <div class="hdr">
@@ -972,10 +964,6 @@ function loadShot(idx) {
   </div>
 </div>
 
-</div><!-- card -->
-</div><!-- /zoom-wrap -->
-<footer>LeStar Z Pool Suite · Zukemeister · zukemeister.github.io</footer>
-
 <script>
 const DEG = 180/Math.PI, RAD = Math.PI/180;
 const Rb  = 82;   // OB radius in botsvg viewBox units
@@ -996,7 +984,7 @@ const S = {
   ob:         {x:230, y:150},   // OB just above center
   cb:         {x:130, y:200},   // CB bottom-left — clear angled approach
   ob2:        {x:370, y:190},   // reference ball
-  target:     {x:370, y:190},
+  target:     {x:430, y:30},    // TR pocket — default until user taps a pocket
   diagCutDeg: 0,
   _diagDragRh: undefined,
   activeSol:  0,
@@ -2437,6 +2425,7 @@ function edgeZoomReset(){
 }
 
 </script>
+</div><!-- /zoom-wrap -->
 <script>
 (function(){
   let scale=1,initDist=0,initScale=1,active=false;
@@ -2455,15 +2444,20 @@ function edgeZoomReset(){
 })();
 </script>
 <!-- ── EDGE CONTROL PANEL ── -->
+<div class="toolbar-col">
 <div id="edge-panel-wrap">
 <div id="edge-panel">
 
   <div class="ep-section zoom">
     <div class="ep-section-label">ZOOM</div>
     <div class="ep-btn-row">
-      <button class="ep-btn" tabindex="-1" onclick="edgeZoom(1.3)">+</button>
-      <button class="ep-btn" tabindex="-1" onclick="edgeZoom(1/1.3)">−</button>
-      <button class="ep-btn" tabindex="-1" onclick="edgeZoomReset()">↺</button>
+      <button class="ep-btn" tabindex="-1" onclick="edgeZoom(1.3)">IN +</button>
+    </div>
+    <div class="ep-btn-row" style="margin-top:2px;">
+      <button class="ep-btn" tabindex="-1" onclick="edgeZoom(1/1.3)">OUT −</button>
+    </div>
+    <div class="ep-btn-row" style="margin-top:2px;">
+      <button class="ep-btn" tabindex="-1" onclick="edgeZoomReset()">RESET</button>
     </div>
   </div>
 
@@ -2500,7 +2494,10 @@ function edgeZoomReset(){
     </div>
   </div>
 
-</div>
+</div><!-- /edge-panel -->
 </div><!-- /edge-panel-wrap -->
+</div><!-- /toolbar-col -->
+</div><!-- /outer-wrap -->
+<footer>LeStar Z Pool Suite · Zukemeister · zukemeister.github.io</footer>
 </body>
 </html>

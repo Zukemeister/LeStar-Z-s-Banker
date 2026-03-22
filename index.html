@@ -19,7 +19,8 @@
 button{-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;}
 svg,.diagram-wrap,.card{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;}
 html,body{background:#141414;font-family:'Lato',sans-serif;display:flex;flex-direction:column;align-items:center;padding:12px 8px 32px;min-height:100vh;}
-.card{background:#1a361a;border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,0.7);width:100%;max-width:700px;padding:14px 70px 16px 12px;border:2px solid #2a4e2a;}
+.card{background:#1a361a;border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,0.7);width:100%;max-width:700px;padding:14px 12px 16px 12px;border:2px solid #2a4e2a;}
+@media(max-width:700px){.card{margin-right:66px;}}
 
 /* ── HEADER ── */
 .hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.07);}
@@ -48,7 +49,7 @@ h1{display:flex;align-items:center;justify-content:center;line-height:1;margin-b
 #no-solution{display:none;font-size:0.72rem;color:rgba(255,255,255,0.35);padding:4px 0 8px;letter-spacing:1px;}
 
 /* ── SLIDERS ── */
-.sgroup{background:rgba(0,0,0,0.18);border-radius:7px;padding:7px 10px 6px;margin-bottom:6px;border:1px solid rgba(255,255,255,0.07);}
+.sgroup{background:rgba(0,0,0,0.18);border-radius:7px;padding:7px 10px 6px 10px;margin-bottom:6px;border:1px solid rgba(255,255,255,0.07);}
 .sgroup-title{font-size:9px;font-weight:700;letter-spacing:0.13em;text-transform:uppercase;color:#ddd;margin-bottom:6px;}
 .srow{display:flex;align-items:center;gap:8px;margin-bottom:2px;}
 .srow:last-child{margin-bottom:0;}
@@ -201,11 +202,11 @@ if ('serviceWorker' in navigator) {
   });
 }
 const SHOT_LIBRARY = [
-  { name: 'Cross-table bank',  cb:{x:105,y:205}, ob:{x:255,y:155}, pocket:'TR', desc:'CB at 26, OB at 20 — bottom rail, corner TR' },
-  { name: 'Short-angle bank',  cb:{x:205,y:205}, ob:{x:355,y:155}, pocket:'TL', desc:'CB at 28, OB at 23 — bottom rail, corner TL' },
-  { name: 'Long-angle bank',   cb:{x:55, y:205}, ob:{x:205,y:155}, pocket:'TR', desc:'CB at 25, OB at 20 — long bank to corner TR' },
-  { name: '2-rail corner',     cb:{x:355,y:205}, ob:{x:205,y:155}, pocket:'BR', desc:'CB at 28, OB at 20 — 2-rail to corner BR' },
-  { name: 'Side-pocket bank',  cb:{x:105,y:155}, ob:{x:355,y:155}, pocket:'TM', desc:'CB at 18, OB at 23 — top rail, side pocket' },
+  { name: 'Cross Side 1',  cb:{x:130,y:205}, ob:{x:130,y:80},  pocket:'BM', sol:1, cut:27,  rh:true,  desc:'CB sq26f, OB sq2g — 27°R · P5' },
+  { name: 'Cross Side 2',  cb:{x:180,y:205}, ob:{x:180,y:80},  pocket:'BM', sol:1, cut:14,  rh:true,  desc:'CB sq27f, OB sq3g — 14°R · P5' },
+  { name: 'Cross Side 3',  cb:{x:80, y:180}, ob:{x:130,y:80},  pocket:'BM', sol:1, cut:2,   rh:false, desc:'CB sq17g, OB sq2g — 2°L · P5' },
+  { name: 'End Rail 1',    cb:{x:230,y:155}, ob:{x:130,y:130}, pocket:'TR', sol:0, cut:2,   rh:false, desc:'CB sq20f, OB sq10g — 2°L · P3' },
+  { name: 'End Rail 2',    cb:{x:230,y:180}, ob:{x:80, y:130}, pocket:'TR', sol:0, cut:4,   rh:false, desc:'CB sq20g, OB sq9g — 4°L · P3' },
 ];
 let libraryOpen = false;
 // ── USER SHOT LIBRARY ──────────────────────────────────────────
@@ -243,7 +244,7 @@ function loadUserShot(idx) {
   if (!shot) return;
   S.ob = {...shot.ob}; S.cb = {...shot.cb};
   if (shot.pocket && POCKETS[shot.pocket]) selectPocket(shot.pocket);
-  render(); toggleShotLibrary();
+  render();
 }
 
 function deleteUserShot(idx) {
@@ -281,12 +282,7 @@ function buildShotList() {
   // Preset click handler
   el.querySelectorAll('[data-preset]').forEach(item => {
     item.addEventListener('click', () => {
-      const idx = parseInt(item.dataset.preset);
-      const shot = SHOT_LIBRARY[idx];
-      if (!shot) return;
-      S.ob = {...shot.ob}; S.cb = {...shot.cb};
-      if (shot.pocket && POCKETS[shot.pocket]) selectPocket(shot.pocket);
-      render(); toggleShotLibrary();
+      loadShot(parseInt(item.dataset.preset));
     });
   });
 }
@@ -299,14 +295,39 @@ function toggleShotLibrary() {
 function loadShot(idx) {
   const shot = SHOT_LIBRARY[idx];
   if (!shot) return;
-  if (shot.ob) { S.ob = {...shot.ob}; S.cb = {...shot.cb}; }
+  S.ob = {...shot.ob}; S.cb = {...shot.cb};
   if (shot.pocket && POCKETS[shot.pocket]) {
-    selectPocket(shot.pocket);
+    S.target = { x: POCKETS[shot.pocket].x, y: POCKETS[shot.pocket].y };
   }
-  render(); toggleShotLibrary();
+  S.activeSol  = shot.sol !== undefined ? shot.sol : 0;
+  S.diagCutDeg = shot.cut !== undefined ? shot.cut : null;
+  S._diagDragRh = shot.rh !== undefined ? shot.rh : undefined;
+  shotLocked = (shot.cut !== undefined);
+  render();
+  // Force readouts directly — override whatever render computed
+  if (shot.cut !== undefined) {
+    const _aimF = Math.sin(Math.min(shot.cut, 90) * Math.PI/180);
+    const _dir  = shot.cut < 0.5 ? '' : (shot.rh ? ' R' : ' L');
+    const _frac = (function(f){
+      if(f>=0.875)return'full ball'; if(f>=0.75)return'⅞ ball';
+      if(f>=0.625)return'¾ ball';   if(f>=0.5) return'⅝ ball';
+      if(f>=0.375)return'½ ball';   if(f>=0.25)return'⅜ ball';
+      if(f>=0.125)return'¼ ball';   return '⅛ ball';
+    })(_aimF);
+    const sT = (id,v)=>{ const e=document.getElementById(id); if(e) e.textContent=v; };
+    sT('ro-cut',  shot.cut.toFixed(1)+'°'+_dir);
+    sT('ro-frac', _frac);
+    sT('ro-aim',  Math.round(_aimF*100)+'%'+_dir);
+  }
 }
 
 </script>
+  <link rel="manifest" href="manifest-banker.json">
+  <link rel="apple-touch-icon" href="icon-banker-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="LZ Banker">
+  <meta name="theme-color" content="#1a361a">
 </head>
 <body>
 <!-- Persistent gradients for aiming diagram (Aimer protocol) -->
@@ -695,6 +716,13 @@ function loadShot(idx) {
       <circle id="phl-BL" cx="30"  cy="230" r="16" fill="none" stroke="#f0df70" stroke-width="2"   opacity="0"/>
       <circle id="phl-BM" cx="230" cy="230" r="14" fill="none" stroke="#f0df70" stroke-width="2"   opacity="0"/>
       <circle id="phl-BR" cx="430" cy="230" r="16" fill="none" stroke="#f0df70" stroke-width="2"   opacity="0"/>
+      <!-- Pocket number labels -->
+      <text x="48"  y="44"  font-family="Lato,sans-serif" font-size="9" font-weight="900" fill="rgba(240,223,112,0.55)" text-anchor="middle">1</text>
+      <text x="230" y="44"  font-family="Lato,sans-serif" font-size="9" font-weight="900" fill="rgba(240,223,112,0.55)" text-anchor="middle">2</text>
+      <text x="412" y="44"  font-family="Lato,sans-serif" font-size="9" font-weight="900" fill="rgba(240,223,112,0.55)" text-anchor="middle">3</text>
+      <text x="48"  y="222" font-family="Lato,sans-serif" font-size="9" font-weight="900" fill="rgba(240,223,112,0.55)" text-anchor="middle">4</text>
+      <text x="230" y="222" font-family="Lato,sans-serif" font-size="9" font-weight="900" fill="rgba(240,223,112,0.55)" text-anchor="middle">5</text>
+      <text x="412" y="222" font-family="Lato,sans-serif" font-size="9" font-weight="900" fill="rgba(240,223,112,0.55)" text-anchor="middle">6</text>
 
       <!-- Free draggable target -->
       <!-- Ghost ball -->
@@ -954,6 +982,7 @@ const S = {
 };
 let drag = null;
 let diagDrag = false;
+let shotLocked = false;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONSTANTS (table geometry)
@@ -963,8 +992,11 @@ const DU = 50;
 const BALL_R = 10;
 const RAIL_SHORT = { top:'TOP', bottom:'BTM', left:'LFT', right:'RGT' };
 const POCKETS = {
-  TL:{x:30, y:30, label:'Top Left'}, TM:{x:230,y:30, label:'Top Mid'}, TR:{x:430,y:30, label:'Top Right'},
-  BL:{x:30,y:230,label:'Bot Left'},  BM:{x:230,y:230,label:'Bot Mid'}, BR:{x:430,y:230,label:'Bot Right'},
+  TL:{x:30, y:30, label:'Top Left',  num:1}, TM:{x:230,y:30, label:'Top Mid',   num:2}, TR:{x:430,y:30, label:'Top Right', num:3},
+  BL:{x:30,y:230,label:'Bot Left',   num:4}, BM:{x:230,y:230,label:'Bot Mid',   num:5}, BR:{x:430,y:230,label:'Bot Right', num:6},
+  // Numeric aliases
+  '1':{x:30, y:30, label:'Top Left',  num:1}, '2':{x:230,y:30, label:'Top Mid',   num:2}, '3':{x:430,y:30, label:'Top Right', num:3},
+  '4':{x:30,y:230,label:'Bot Left',   num:4}, '5':{x:230,y:230,label:'Bot Mid',   num:5}, '6':{x:430,y:230,label:'Bot Right', num:6},
 };
 const RAIL_COLORS = { top:'#f0df70', bottom:'#7dd3fc', left:'#f87171', right:'#4ade80' };
 
@@ -1066,6 +1098,40 @@ function computeDiagShot(sol) {
   const cbl = Math.hypot(cbx, cby);
   const cbToObAngle = Math.atan2(cby, cbx);
 
+  // When a preset shot is locked, use stated angle directly — skip geometry
+  if (shotLocked && S.diagCutDeg !== null && S._diagDragRh !== undefined) {
+    const cutDeg = S.diagCutDeg;
+    const rh     = S._diagDragRh;
+    const side   = rh ? 1 : -1;
+    const deptAngle = cbToObAngle + side * cutDeg * RAD;
+    const ddx = Math.cos(deptAngle), ddy = Math.sin(deptAngle);
+    // Find rail intersection
+    let tMin = 9999, hitRail = null;
+    if (ddy < 0) { const t=(TL.top   -S.ob.y)/ddy; if(t>0&&t<tMin){tMin=t;hitRail='top';} }
+    if (ddy > 0) { const t=(TL.bottom-S.ob.y)/ddy; if(t>0&&t<tMin){tMin=t;hitRail='bottom';} }
+    if (ddx < 0) { const t=(TL.left  -S.ob.x)/ddx; if(t>0&&t<tMin){tMin=t;hitRail='left';} }
+    if (ddx > 0) { const t=(TL.right -S.ob.x)/ddx; if(t>0&&t<tMin){tMin=t;hitRail='right';} }
+    const contact = hitRail ? {x:S.ob.x+ddx*tMin, y:S.ob.y+ddy*tMin, rail:hitRail} : sol.contact;
+    sol.contact = contact; sol.θ = deptAngle;
+    const aimF = Math.sin(Math.min(cutDeg,90)*RAD);
+    // Rebound
+    const pocket = S.target || sol._reboundEnd;
+    const k = kFactor(1, Math.hypot(contact.x-S.ob.x, contact.y-S.ob.y));
+    let rdx=ddx, rdy=ddy;
+    if (contact.rail==='top'||contact.rail==='bottom'){rdy=-ddy;rdx=ddx*k;}
+    else{rdx=-ddx;rdy=ddy*k;}
+    const _rLen = 400;
+    const rbEnd = pocket || {x:contact.x+rdx*_rLen, y:contact.y+rdy*_rLen};
+    return {
+      θ: deptAngle, contact, _reboundEnd: rbEnd,
+      cutDeg, Z_des:cutDeg*RAD, Z_aim:cutDeg*RAD,
+      aimFraction:aimF, diagFraction:aimF,
+      rebDeg: angleFromRail(rdx,rdy,contact.rail),
+      inducedRailSpin:0, cueSpin:0, cross:false, rail:contact.rail,
+      ob:{...S.ob}, cb:{...S.cb}
+    };
+  }
+
   // OB departure from the bank solution (authoritative rail contact)
   const solθ = Math.atan2(sol.contact.y - S.ob.y, sol.contact.x - S.ob.x);
   const sdx = Math.cos(solθ), sdy = Math.sin(solθ);
@@ -1078,12 +1144,10 @@ function computeDiagShot(sol) {
   const crossZ  = cbx * sdy - cby * sdx;
   const tableRh = crossZ > 0;
 
-  // diagCutDeg drives display; rh always from live CB/OB geometry when not dragging
   if (S.diagCutDeg === null) S.diagCutDeg = tableCutDeg < 0.5 ? 0 : Math.min(90, tableCutDeg);
   const cutDeg = Math.min(90, S.diagCutDeg);
 
-  // When dragging diagram, use stored side; otherwise always recompute from table
-  const rh = diagDrag && S._diagDragRh !== undefined ? S._diagDragRh : tableRh;
+  const rh = (diagDrag && S._diagDragRh !== undefined) ? S._diagDragRh : tableRh;
   if (!diagDrag) S._diagDragRh = tableRh;
 
   // OB departure: CB→OB direction + cut rotation + cut-induced throw (CIT)
@@ -1463,7 +1527,8 @@ function drawBot(sol) {
   out += '<text x="230" y="36" text-anchor="middle" font-family="Lato,sans-serif" font-size="7" font-weight="700" letter-spacing="1" fill="rgba(255,255,255,0.4)">AIM POINT</text>';
   // Right — Cut Angle badge
   out += '<rect x="382" y="6" width="70" height="36" rx="6" fill="rgba(232,112,48,0.15)"/>';
-  out += '<text x="417" y="24" text-anchor="middle" font-family="Lato,sans-serif" font-size="16" font-weight="900" fill="#e87030">'+Zdeg+'°</text>';
+  const _diagDir = Zdeg < 0.5 ? '' : (S._diagDragRh ? ' R' : ' L');
+  out += '<text x="417" y="24" text-anchor="middle" font-family="Lato,sans-serif" font-size="16" font-weight="900" fill="#e87030">'+Zdeg+'°'+_diagDir+'</text>';
   out += '<text x="417" y="36" text-anchor="middle" font-family="Lato,sans-serif" font-size="7" font-weight="700" letter-spacing="1" fill="rgba(255,255,255,0.4)">CUT</text>';
 
   if (S.spin !== 0) out += '<text x="'+(W-8)+'" y="'+(H-8)+'" text-anchor="end" font-family="Lato,sans-serif" font-size="8" font-weight="700" fill="#e870b0">'+spinLabels[String(S.spin)]+'</text>';
@@ -1509,6 +1574,7 @@ function render() {
 
   const sols = allSolutions();
   if (sols.length === 0) {
+    sT('ro-pocket', '—');
     ['ro-cut','ro-frac','ro-aim','ro-dist','ro-throw','ro-contact','ro-reb'].forEach(id=>sT(id,'—'));
     $('ro-contact2-row').style.display = 'none';
     document.getElementById('botsvg').innerHTML = '<rect width="460" height="300" fill="rgba(0,0,0,0.28)"/><text x="230" y="155" text-anchor="middle" font-family="Lato,sans-serif" font-size="13" fill="rgba(255,255,255,0.25)">No valid bank</text>';
@@ -1518,6 +1584,31 @@ function render() {
   let baseSol = sols[S.activeSol];
   const sol = computeDiagShot(baseSol);
   const pocket = S.target;
+
+  // If a shot was loaded with a stated cut angle, override the OB departure direction
+  if (S.diagCutDeg !== null && S.diagCutDeg !== undefined && S._diagDragRh !== undefined) {
+    const cbToObAngle = Math.atan2(S.ob.y - S.cb.y, S.ob.x - S.cb.x);
+    const side = S._diagDragRh ? 1 : -1;
+    const deptAngle = cbToObAngle + side * S.diagCutDeg * RAD;
+    const ddx = Math.cos(deptAngle), ddy = Math.sin(deptAngle);
+    // Find rail intersection
+    let tMin = 9999, hitRail = null;
+    if (ddy < 0) { const t=(TL.top   -S.ob.y)/ddy; if(t>0&&t<tMin){tMin=t;hitRail='top';} }
+    if (ddy > 0) { const t=(TL.bottom-S.ob.y)/ddy; if(t>0&&t<tMin){tMin=t;hitRail='bottom';} }
+    if (ddx < 0) { const t=(TL.left  -S.ob.x)/ddx; if(t>0&&t<tMin){tMin=t;hitRail='left';} }
+    if (ddx > 0) { const t=(TL.right -S.ob.x)/ddx; if(t>0&&t<tMin){tMin=t;hitRail='right';} }
+    if (hitRail && tMin < 9999) {
+      sol.contact = { x: S.ob.x + ddx*tMin, y: S.ob.y + ddy*tMin, rail: hitRail };
+      sol.θ = deptAngle;
+      sol._reboundEnd = pocket;
+      // Update sol fields so readouts and diagram use the stated angle
+      sol.cutDeg = S.diagCutDeg;
+      sol.Z_des  = S.diagCutDeg * RAD;
+      sol.aimFraction = Math.sin(Math.min(S.diagCutDeg, 90) * RAD);
+      sol.diagFraction = sol.aimFraction;
+      sol.Z_aim  = sol.Z_des;
+    }
+  }
 
   // ── TABLE GRAPHICS ──
 
@@ -1566,11 +1657,14 @@ function render() {
   drawBot(sol);
   drawBankerBounce(sol);
 
+  // Pocket display
+  const _activePocket = S.target ? Object.entries(POCKETS).find(([k,p]) => !isNaN(k) && Math.hypot(p.x-S.target.x,p.y-S.target.y)<5) : null;
+  sT('ro-pocket', _activePocket ? _activePocket[1].num + ' — ' + _activePocket[1].label : '—');
+
   // ── READOUTS ──
   const displayCutDeg = Math.abs(S.diagCutDeg !== null ? S.diagCutDeg : sol.cutDeg) < 0.5 ? 0 : (S.diagCutDeg !== null ? S.diagCutDeg : sol.cutDeg);
   const displayAimF   = Math.sin(Math.min(displayCutDeg, 90) * RAD);
-  const _tableRh = S.ob.x > S.cb.x ? (S.ob.y < S.cb.y) : (S.ob.y > S.cb.y);
-  const _bdir = displayCutDeg < 0.5 ? '' : (_tableRh ? ' R' : ' L');
+  const _bdir = displayCutDeg < 0.5 ? '' : (S._diagDragRh ? ' R' : ' L');
   sT('ro-cut', displayCutDeg < 0.5 ? '0°' : displayCutDeg.toFixed(1) + '°' + _bdir);
   sT('ro-frac', fracStr(displayAimF));
   sT('ro-aim',  Math.round(displayAimF * 100) + '%' + _bdir);
@@ -1622,6 +1716,7 @@ function botSvgPt(e) {
 }
 
 botsvg.addEventListener('pointerdown', e => {
+  if (lockBalls) return;  // locked — let touch pass through for scroll/pinch
   const _p = botSvgPt(e);
   if (_p.y < 66 || _p.y > 230) return;  // dead zone above/below ball
   e.preventDefault();
@@ -1673,8 +1768,8 @@ function clampBall(x,y){return{x:Math.max(TL.left+BALL_R,Math.min(TL.right-BALL_
 function clampTable(x,y){return{x:Math.max(TL.left,Math.min(TL.right,x)),y:Math.max(TL.top,Math.min(TL.bottom,y))};}
 
 svg.addEventListener('pointerdown', e => {
+  if(lockTable)return;  // table locked — let touch pass through for scroll/pinch
   e.preventDefault();
-  if(lockTable)return;
   const p = svgPt(e);
   // Calibration tap mode — any tap on table records actual endpoint
   if (calMode && calPhase === 'tap') {
@@ -1693,11 +1788,11 @@ svg.addEventListener('pointermove', e => {
   const p = svgPt(e);
   if (drag==='ob') {
     const c=clampBall(p.x,p.y), sn=applySnap(c.x,c.y);
-    S.ob={x:sn.x,y:sn.y}; S.diagCutDeg=null; S._diagDragRh=undefined;
+    S.ob={x:sn.x,y:sn.y}; S.diagCutDeg=null; S._diagDragRh=undefined; shotLocked=false;
     if(sn.label)showSnapLabel($('tbl'),sn.x,sn.y,sn.label,'ob');
   } else if (drag==='cb') {
     const c=clampBall(p.x,p.y), sn=applySnap(c.x,c.y);
-    S.cb={x:sn.x,y:sn.y}; S.diagCutDeg=null; S._diagDragRh=undefined;
+    S.cb={x:sn.x,y:sn.y}; S.diagCutDeg=null; S._diagDragRh=undefined; shotLocked=false;
     if(sn.label)showSnapLabel($('tbl'),sn.x,sn.y,sn.label,'cb');
   } else if (drag==='ob2') { S.ob2=clampBall(p.x,p.y); }
   render();
@@ -1751,6 +1846,7 @@ let snapLabelTimer = null;
 let SNAP_POINTS = [];
 const SNAP_RADIUS = 14;
 let lockTable = false;
+let lockBalls = false;
 let lockSliders = false;
 let ghostOn = true;
 let bounceOn = false;
@@ -1922,8 +2018,9 @@ function selectPocket(key) {
   S.activeSol = 0;
   
   Object.keys(POCKETS).forEach(k => sV('phl-'+k, false));
-  sV('phl-'+key, true);
-  setTimeout(() => sV('phl-'+key, false), 600);
+  // Show pocket number label
+  const _pn = POCKETS[key]?.num;
+  if (_pn) sT('ro-pocket', _pn + ' — ' + POCKETS[key].label);
   render();
 }
 
@@ -2167,6 +2264,7 @@ calUpdateUI();
 const _ml = $('map-layer');
 if (_ml) { _ml.style.opacity = '1'; }
 SNAP_POINTS = buildSnapPoints();
+const _epB=document.getElementById('ep-bias');if(_epB){_epB.classList.add('on');_epB.textContent='ON';}
 
 loadUserShots();
 buildShotList();
@@ -2210,6 +2308,8 @@ document.addEventListener('touchcancel', () => {
 function buildSnapPoints() {
   const pts = [], seen = new Set();
   const DX=50, DY=50, OX=30, OY=30;
+  const BR=9, XMIN=OX+BR, XMAX=OX+8*DX-BR, YMIN=OY+BR, YMAX=OY+4*DY-BR;
+  function sc(x,y){return{x:Math.max(XMIN,Math.min(XMAX,x)),y:Math.max(YMIN,Math.min(YMAX,y))};}
   function add(x,y,label){
     const k=x+','+y; if(seen.has(k))return; seen.add(k); pts.push({x,y,label});
   }
@@ -2217,10 +2317,14 @@ function buildSnapPoints() {
     for(let col=0;col<8;col++){
       const n=row*8+col+1, x0=OX+col*DX, y0=OY+row*DY, cx=x0+DX/2, cy=y0+DY/2;
       add(cx,cy,String(n));
-      add(x0,   y0+DY, n+'a'); add(x0,   cy,    n+'b');
-      add(x0,   y0,    n+'c'); add(cx,   y0,    n+'d');
-      add(x0+DX,y0,    n+'e'); add(x0+DX,cy,    n+'f');
-      add(x0+DX,y0+DY, n+'g'); add(cx,   y0+DY, n+'h');
+      const pa=sc(x0,   y0+DY); add(pa.x,pa.y,n+'a');
+      const pb=sc(x0,   cy);    add(pb.x,pb.y,n+'b');
+      const pc=sc(x0,   y0);    add(pc.x,pc.y,n+'c');
+      const pd=sc(cx,   y0);    add(pd.x,pd.y,n+'d');
+      const pe=sc(x0+DX,y0);    add(pe.x,pe.y,n+'e');
+      const pf=sc(x0+DX,cy);    add(pf.x,pf.y,n+'f');
+      const pg=sc(x0+DX,y0+DY); add(pg.x,pg.y,n+'g');
+      const ph=sc(cx,   y0+DY); add(ph.x,ph.y,n+'h');
     }
   }
   return pts;
@@ -2258,12 +2362,16 @@ function toggleSnap(){
 // ── LOCK SYSTEM ──────────────────────────────────────────────
 function toggleLock(which){
   if(which==='table')   lockTable  =!lockTable;
+  if(which==='balls')   lockBalls  =!lockBalls;
   if(which==='sliders') lockSliders=!lockSliders;
-  const lt=document.getElementById('ep-lt'), ls=document.getElementById('ep-ls');
+  const lt=document.getElementById('ep-lt'), ls=document.getElementById('ep-ls'), lb=document.getElementById('ep-lb');
   if(lt)lt.classList.toggle('locked',lockTable);
   if(ls)ls.classList.toggle('locked',lockSliders);
+  if(lb)lb.classList.toggle('locked',lockBalls);
   const topsvgEl=document.getElementById('tbl');
   if(topsvgEl)topsvgEl.style.touchAction=lockTable?'auto':'none';
+  const bs=document.getElementById('botsvg');
+  if(bs)bs.style.touchAction=lockBalls?'auto':'none';
   const sg=document.querySelector('.sgroup');
   if(sg)sg.style.opacity=lockSliders?'0.4':'1';
   document.querySelectorAll('.sgroup input[type=range]').forEach(el=>{el.disabled=lockSliders;});
@@ -2327,6 +2435,7 @@ function edgeZoomReset(){
   <div class="ep-sep"></div>
   <div class="ep-label">lock</div>
   <button class="ep-btn" id="ep-lt" tabindex="-1" onclick="toggleLock('table')">T</button>
+  <button class="ep-btn" id="ep-lb" tabindex="-1" onclick="toggleLock('balls')">B</button>
   <button class="ep-btn" id="ep-ls" tabindex="-1" onclick="toggleLock('sliders')">S</button>
   <div class="ep-sep"></div>
   <div class="ep-label">zero</div>

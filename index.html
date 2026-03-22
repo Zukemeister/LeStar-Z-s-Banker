@@ -2427,20 +2427,62 @@ function edgeZoomReset(){
 </script>
 </div><!-- /zoom-wrap -->
 <script>
+// Pinch-to-zoom + pan — toolbar stays fixed, content pans under it
 (function(){
-  let scale=1,initDist=0,initScale=1,active=false;
+  let scale=1, tx=0, ty=0;
+  let initDist=0, initScale=1, initTx=0, initTy=0, initMidX=0, initMidY=0;
+  let pinchActive=false;
+  let panActive=false, panStartX=0, panStartY=0, panInitTx=0, panInitTy=0;
+
+  function applyTransform(){
+    const w=document.getElementById('zoom-wrap');
+    if(!w) return;
+    w._zscale=scale;
+    if(scale<=1){ tx=0; ty=0; }
+    w.style.transform=`translate(${tx}px,${ty}px) scale(${scale})`;
+    w.style.transformOrigin='top left';
+  }
+
   document.addEventListener('touchstart',e=>{
-    if(e.touches.length===2){active=true;
-      initDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
-      initScale=scale;e.preventDefault();}
+    if(e.touches.length===2){
+      pinchActive=true; panActive=false;
+      initDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,
+                          e.touches[0].clientY-e.touches[1].clientY);
+      initScale=scale; initTx=tx; initTy=ty;
+      initMidX=(e.touches[0].clientX+e.touches[1].clientX)/2;
+      initMidY=(e.touches[0].clientY+e.touches[1].clientY)/2;
+      e.preventDefault();
+    } else if(e.touches.length===1 && scale>1){
+      panActive=true;
+      panStartX=e.touches[0].clientX; panStartY=e.touches[0].clientY;
+      panInitTx=tx; panInitTy=ty;
+    }
   },{passive:false});
+
   document.addEventListener('touchmove',e=>{
-    if(!active||e.touches.length!==2)return;e.preventDefault();
-    const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
-    scale=Math.max(0.1,Math.min(3,initScale*d/initDist));
-    document.getElementById('zoom-wrap').style.transform='scale('+scale+')';
+    if(pinchActive && e.touches.length===2){
+      e.preventDefault();
+      const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,
+                         e.touches[0].clientY-e.touches[1].clientY);
+      const newScale=Math.max(1,Math.min(4,initScale*d/initDist));
+      const scaleDelta=newScale/initScale;
+      tx=initMidX - scaleDelta*(initMidX-initTx);
+      ty=initMidY - scaleDelta*(initMidY-initTy);
+      scale=newScale;
+      applyTransform();
+    } else if(panActive && e.touches.length===1 && scale>1){
+      e.preventDefault();
+      tx=panInitTx+(e.touches[0].clientX-panStartX);
+      ty=panInitTy+(e.touches[0].clientY-panStartY);
+      applyTransform();
+    }
   },{passive:false});
-  document.addEventListener('touchend',e=>{if(e.touches.length<2)active=false;});
+
+  document.addEventListener('touchend',e=>{
+    if(e.touches.length<2){ pinchActive=false; }
+    if(e.touches.length===0){ panActive=false; }
+    if(scale<1.05){ scale=1; tx=0; ty=0; applyTransform(); }
+  });
 })();
 </script>
 <!-- ── EDGE CONTROL PANEL ── -->

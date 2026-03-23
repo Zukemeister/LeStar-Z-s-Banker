@@ -19,9 +19,9 @@
 button{-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;}
 svg,.diagram-wrap,.card{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;}
 html,body{background:#141414;font-family:'Lato',sans-serif;display:flex;flex-direction:column;align-items:center;padding:12px 8px 32px;min-height:100vh;}
-.outer-wrap{display:flex;flex-direction:row;align-items:flex-start;width:100%;max-width:762px;background:#1a361a;border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,0.7);border:2px solid #2a4e2a;}
-.card{flex:1;min-width:0;padding:14px 12px 16px 12px;}
-.toolbar-col{width:62px;flex-shrink:0;align-self:stretch;display:flex;align-items:center;justify-content:center;border-left:1px solid rgba(0,0,0,0.15);position:relative;z-index:10;background:#1a361a;}
+.outer-wrap{display:flex;flex-direction:row;align-items:flex-start;width:100%;max-width:762px;background:#1a361a;border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,0.7);border:2px solid #2a4e2a;position:relative;}
+.card{flex:1;min-width:0;padding:14px 72px 16px 12px;}
+.toolbar-col{position:absolute;right:0;top:0;bottom:0;width:62px;z-index:100;display:flex;align-items:center;justify-content:center;}
 
 
 /* ── HEADER ── */
@@ -121,6 +121,9 @@ footer{text-align:center;font-size:0.58rem;color:rgba(255,255,255,0.15);padding:
   width: 62px;
   pointer-events: all;
   touch-action: manipulation;
+  background: #1a2e1a;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.6);
 }
 .ep-section {
   display: flex;
@@ -166,10 +169,10 @@ footer{text-align:center;font-size:0.58rem;color:rgba(255,255,255,0.15);padding:
 .ep-btn.on     { background: #f0df70; color: #1a1400; border-color: #f0df70; }
 .ep-btn.locked { background: #ff6060; color: #1a0000; border-color: #ff6060; }
 .ep-divider { height: 1px; background: rgba(255,255,255,0.15); margin: 1px 0; }
-.ep-section.zoom   { background: rgba(100,140,255,0.18); }
-.ep-section.snap   { background: rgba(60,200,60,0.18); }
-.ep-section.lock   { background: rgba(220,60,60,0.18); }
-.ep-section.zero   { background: rgba(220,140,0,0.18); }
+.ep-section.zoom   { background: rgba(60,80,160,0.92); }
+.ep-section.snap   { background: rgba(30,100,30,0.92); }
+.ep-section.lock   { background: rgba(120,30,30,0.92); }
+.ep-section.zero   { background: rgba(120,70,0,0.92); }
 .ep-section.zoom   .ep-section-label { color: #a0c0ff; }
 .ep-section.snap   .ep-section-label { color: #80e880; }
 .ep-section.lock   .ep-section-label { color: #ff9090; }
@@ -374,7 +377,7 @@ function loadShot(idx) {
   </defs>
 </svg>
 <div class="outer-wrap">
-<div id="zoom-wrap" style="flex:1;min-width:0;transform-origin:top left;overflow:hidden;"><div class="card">
+<div id="zoom-wrap" style="flex:1;min-width:0;transform-origin:top left;"><div class="card">
 
 <!-- ── HEADER ── -->
 <div class="hdr">
@@ -2453,8 +2456,17 @@ function edgeZoomReset(){
       initMidY=(e.touches[0].clientY+e.touches[1].clientY)/2;
       e.preventDefault();
     } else if(e.touches.length===1 && scale>1){
+      // Don't pan if touch is on a draggable SVG element
+      const t=e.touches[0];
+      const onSvg=['tbl','botsvg'].some(id=>{
+        const el=document.getElementById(id);
+        if(!el) return false;
+        const r=el.getBoundingClientRect();
+        return t.clientX>=r.left&&t.clientX<=r.right&&t.clientY>=r.top&&t.clientY<=r.bottom;
+      });
+      if(onSvg) return;
       panActive=true;
-      panStartX=e.touches[0].clientX; panStartY=e.touches[0].clientY;
+      panStartX=t.clientX; panStartY=t.clientY;
       panInitTx=tx; panInitTy=ty;
     }
   },{passive:false});
